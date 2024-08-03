@@ -3,6 +3,7 @@ import twilio from 'twilio';
 import OpenAIService from '../services/openaiService.js';
 import dotenv from 'dotenv';
 import User from '../models/User.js';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -10,26 +11,37 @@ const router = express.Router();
 
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 
-console.log('Twilio Auth Token:', twilioAuthToken);
+// Función para validar el número de teléfono
+const isValidPhoneNumber = (phoneNumber) => {
+  // Implementa la lógica de validación según tus necesidades
+  return phoneNumber && phoneNumber.startsWith('whatsapp:+');
+};
+
+// Función para determinar el tipo de mensaje
+const getMessageType = (body) => {
+  if (body.NumMedia > 0) {
+    return body.MediaContentType0.startsWith('audio/') ? 'audio' : 'image';
+  }
+  return 'text';
+};
 
 router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook({ validate: false }), async (req, res) => {
-  console.log('Webhook recibido:', req.body);
+  logger.info('Webhook recibido:', req.body);
   const incomingMsg = req.body.Body;
   const from = req.body.From;
   const waId = req.body.WaId;
   const mediaUrl = req.body.NumMedia > 0 ? req.body.MediaUrl0 : null;
   const mediaType = req.body.MediaContentType0;
 
-  console.log('Mensaje recibido:', incomingMsg);
-  console.log('De:', from);
-  console.log('WaId:', waId);
-  console.log('Media URL:', mediaUrl);
+  const messageType = getMessageType(req.body);
 
   try {
-    if (!incomingMsg && !mediaUrl) {
-      console.log('Cuerpo de la solicitud:', req.body);
-      res.status(400).send('No se recibió ningún mensaje ni imagen');
-      return;
+    if (!isValidPhoneNumber(from)) {
+      throw new Error('Número de teléfono inválido');
+    }
+
+    if (messageType === 'image' && req.body.NumMedia > 1) {
+      throw new Error('Solo se puede procesar una imagen por mensaje');
     }
 
     let user = await User.findByPk(waId);
@@ -38,53 +50,49 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
         id: waId, 
         phoneNumber: from.replace('whatsapp:', ''), 
         name: 'Unknown',
-        isNewUser: true
+        isNewUser: true,
+        assistant_ID: 'asst_AUZqqVPMNJFedXX3A5fYBp7f' // ID del asistente de onboarding
       });
     }
 
     const twiml = new twilio.twiml.MessagingResponse();
 
-    if (user.isNewUser) {
-      // Enviar mensaje de bienvenida
-      const welcomeMessage = `¡Hola! 👋 Bienvenido a Wispen, tu asistente financiero personal en WhatsApp. 🤖💰
-
-Estoy aquí para ayudarte a manejar tus finanzas de forma fácil y divertida. 🎉 Estas son las 4 cosas principales que puedo hacer por ti:
-
-1️⃣ Registrar ingresos y gastos 📝
-   Ejemplo: "Registra un gasto de $50 en comida"
-
-2️⃣ Consultar tu saldo actual 💼
-   Ejemplo: "¿Cuál es mi saldo?"
-
-3️⃣ Generar reportes financieros 📊
-   Ejemplo: "Genera un reporte de gastos del mes"
-
-4️⃣ Ofrecer consejos sobre finanzas personales 💡
-   Ejemplo: "Dame un consejo para ahorrar"
-
-¿En qué te puedo ayudar hoy? ¡Estoy listo para empezar! 😊`;
-      twiml.message(welcomeMessage);
-
-      // Marcar al usuario como no nuevo
-      user.isNewUser = false;
-      await user.save();
-    } else {
-      let aiResponse;
-      if (mediaType && mediaType.startsWith('audio/')) {
+    let aiResponse;
+    switch (messageType) {
+      case 'audio':
         aiResponse = await OpenAIService.processVoiceMessage(mediaUrl, waId);
-      } else {
+        break;
+      case 'image':
         aiResponse = await OpenAIService.processMessage(incomingMsg, waId, mediaUrl);
-      }
-      twiml.message(aiResponse);
+        break;
+      case 'text':
+        aiResponse = await OpenAIService.processMessage(incomingMsg, waId);
+        break;
+      default:
+        throw new Error('Tipo de mensaje no soportado');
     }
+    twiml.message(aiResponse);
+
+    // Log del assistant_ID y threadId después de procesar el mensaje
+    logger.info(`Usuario: ${waId}, Assistant ID: ${user.assistant_ID}, Thread ID: ${user.threadId}`);
 
     res.writeHead(200, {'Content-Type': 'text/xml'});
     res.end(twiml.toString());
-    console.log('Respuesta enviada:', twiml.toString());
+    logger.info('Respuesta enviada:', twiml.toString());
   } catch (error) {
-    console.error('Error procesando la solicitud:', error);
+    logger.error('Error procesando la solicitud:', error);
     const twiml = new twilio.twiml.MessagingResponse();
-    twiml.message('Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo más tarde.');
+    let errorMessage = 'Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo más tarde.';
+    
+    if (error.message === 'Número de teléfono inválido') {
+      errorMessage = 'Lo siento, tu número de teléfono no es válido para este servicio.';
+    } else if (error.message === 'Solo se puede procesar una imagen por mensaje') {
+      errorMessage = 'Por favor, envía solo una imagen por mensaje.';
+    } else if (error.message === 'Tipo de mensaje no soportado') {
+      errorMessage = 'Lo siento, no puedo procesar este tipo de mensaje.';
+    }
+
+    twiml.message(errorMessage);
     res.writeHead(200, {'Content-Type': 'text/xml'});
     res.end(twiml.toString());
   }

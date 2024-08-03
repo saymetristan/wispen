@@ -10,6 +10,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import { createWriteStream, unlink, createReadStream } from 'fs';
 import { promisify } from 'util';
 import openai from '../config/openai.js';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -25,20 +26,20 @@ class OpenAIService {
     if (!userId) {
       throw new Error('ID de usuario no proporcionado');
     }
-
+  
     let user = await User.findByPk(userId);
     
     if (!user) {
       throw new Error('Usuario no encontrado');
     }
-
+  
     if (!user.threadId || this.isThreadExpired(user.threadCreatedAt)) {
       const thread = await openai.beta.threads.create();
       user.threadId = thread.id;
       user.threadCreatedAt = new Date();
       await user.save();
     }
-
+  
     return user.threadId;
   }
 
@@ -76,7 +77,7 @@ class OpenAIService {
 
       return file.id;
     } catch (error) {
-      console.error('Error al subir la imagen a OpenAI:', error);
+      logger.error('Error al subir la imagen a OpenAI:', error);
       throw error;
     }
   }
@@ -87,7 +88,41 @@ class OpenAIService {
     
     while (retries < maxRetries) {
       try {
-        const threadId = await this.getOrCreateThread(userId);
+        const user = await User.findByPk(userId);
+        if (!user) {
+          throw new Error('Usuario no encontrado');
+        }
+
+        logger.info(`Procesando mensaje para el usuario ${userId}. Assistant ID actual: ${user.assistant_ID}`);
+
+        // Verificar si el perfil está completo
+        const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia && (user.ahorrosActuales !== null && user.ahorrosActuales !== undefined);
+
+        if (!perfilCompleto) {
+          logger.info(`Perfil incompleto para el usuario ${userId}. Redirigiendo al onboarding.`);
+          return await this.processOnboarding(userId, message);
+        }
+
+        let threadId = await this.getOrCreateThread(userId);
+
+        // Si el assistant_ID ha cambiado, crear un nuevo thread
+        if (user.assistant_ID !== 'asst_AUZqqVPMNJFedXX3A5fYBp7f' && user.threadId) {
+          logger.info(`Detectado cambio de Assistant ID para el usuario ${userId}. Creando nuevo thread.`);
+          const newThread = await openai.beta.threads.create();
+          user.threadId = newThread.id;
+          user.threadCreatedAt = new Date();
+          await user.save();
+          threadId = user.threadId;
+          logger.info(`Nuevo thread creado para el usuario ${userId}. Thread ID: ${threadId}`);
+        }
+
+        // Verificar si hay un run activo
+        const runs = await openai.beta.threads.runs.list(threadId);
+        const activeRun = runs.data.find(run => run.status === 'in_progress' || run.status === 'queued');
+        if (activeRun) {
+          // Esperar a que el run activo se complete
+          await this.waitForRunCompletion(threadId, activeRun.id);
+        }
 
         // Crear el contenido del mensaje
         const content = [];
@@ -124,9 +159,11 @@ class OpenAIService {
         let run = await openai.beta.threads.runs.create(
           threadId,
           { 
-            assistant_id: this.assistantId,
+            assistant_id: user.assistant_ID,
           }
         );
+
+        logger.info(`Run creado para el usuario ${userId}. Assistant ID: ${user.assistant_ID}, Thread ID: ${threadId}`);
 
         // Esperar a que el run se complete con un tiempo límite
         const maxWaitTime = 60000; // 60 segundos
@@ -158,12 +195,20 @@ class OpenAIService {
         // Obtener el último mensaje del asistente
         const assistantMessages = messages.data.filter(m => m.role === 'assistant');
         if (assistantMessages.length > 0) {
-          return assistantMessages[0].content[0].text.value;
+          const response = assistantMessages[0].content[0].text.value;
+
+          // Actualizar el threadId del usuario
+          user.threadId = threadId;
+          await user.save();
+
+          logger.info(`Mensaje procesado para el usuario ${userId}. Assistant ID final: ${user.assistant_ID}, Thread ID final: ${user.threadId}`);
+
+          return response;
         } else {
           throw new Error('No se recibió respuesta del asistente');
         }
       } catch (error) {
-        console.error(`Error en el intento ${retries + 1}:`, error);
+        logger.error(`Error en el intento ${retries + 1}:`, error);
         retries++;
         if (retries >= maxRetries) {
           throw new Error('Se alcanzó el número máximo de intentos');
@@ -210,13 +255,13 @@ class OpenAIService {
         response_format: "text"
       });
 
-      console.log('Respuesta de transcripción:', transcription);
+      logger.info('Respuesta de transcripción:', transcription);
 
       if (!transcription) {
         throw new Error('La transcripción está vacía o no se obtuvo correctamente');
       }
 
-      console.log('Transcripción obtenida:', transcription);
+      logger.info('Transcripción obtenida:', transcription);
 
       // Eliminar archivos temporales
       await unlinkAsync(tempFilePath);
@@ -225,7 +270,7 @@ class OpenAIService {
       // Procesar el mensaje transcrito
       return await this.processMessage(transcription, userId);
     } catch (error) {
-      console.error('Error al procesar la nota de voz:', error);
+      logger.error('Error al procesar la nota de voz:', error);
       throw error;
     }
   }
@@ -245,8 +290,11 @@ class OpenAIService {
           functionResult = await this.consultarSaldo(userId);
           break;
         case 'generar_reporte':
-          console.log(`Generando reporte para usuario ${userId} con parámetros:`, functionArgs);
+          logger.info(`Generando reporte para usuario ${userId} con parámetros:`, functionArgs);
           functionResult = await this.generarReporte(userId, functionArgs);
+          break;
+        case 'recopilar_perfil_usuario':
+          functionResult = await this.recopilarPerfilUsuario(userId, functionArgs);
           break;
         default:
           throw new Error(`Función no reconocida: ${functionName}`);
@@ -361,6 +409,188 @@ class OpenAIService {
         fecha: t.createdAt.toISOString().split('T')[0]
       }))
     };
+  }
+
+  async processOnboarding(userId, message = null) {
+    try {
+      const user = await User.findByPk(userId);
+      let threadId = user.onboardingThreadId;
+
+      if (!threadId || this.isThreadExpired(user.threadCreatedAt)) {
+        const thread = await openai.beta.threads.create();
+        threadId = thread.id;
+        user.onboardingThreadId = threadId;
+        user.threadCreatedAt = new Date();
+        await user.save();
+      }
+
+      // Añadir el mensaje del usuario al thread si existe
+      if (message) {
+        await openai.beta.threads.messages.create(
+          threadId,
+          {
+            role: "user",
+            content: [{ type: "text", text: message }]
+          }
+        );
+      }
+
+      // Ejecutar el assistant de onboarding en el thread
+      let run = await openai.beta.threads.runs.create(
+        threadId,
+        { assistant_id: 'asst_AUZqqVPMNJFedXX3A5fYBp7f' }
+      );
+
+      // Esperar a que el run se complete con un tiempo límite
+      const maxWaitTime = 60000; // 60 segundos
+      const startTime = Date.now();
+      
+      while (run.status !== 'completed' && Date.now() - startTime < maxWaitTime) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        run = await openai.beta.threads.runs.retrieve(threadId, run.id);
+
+        if (run.status === 'requires_action') {
+          const toolCalls = run.required_action.submit_tool_outputs.tool_calls;
+          const toolOutputs = await this.handleOnboardingFunctionCalls(toolCalls, userId);
+          
+          await openai.beta.threads.runs.submitToolOutputs(
+            threadId,
+            run.id,
+            { tool_outputs: toolOutputs }
+          );
+        }
+      }
+
+      if (run.status !== 'completed') {
+        throw new Error('El asistente de onboarding no completó la tarea en el tiempo esperado');
+      }
+
+      // Obtener los mensajes después de que el run se haya completado
+      const messages = await openai.beta.threads.messages.list(threadId);
+      
+      // Obtener el último mensaje del asistente
+      const assistantMessages = messages.data.filter(m => m.role === 'assistant');
+      if (assistantMessages.length > 0) {
+        const response = assistantMessages[0].content[0].text.value;
+
+        // Verificar si el onboarding se ha completado
+        if (response.includes('perfil completado')) {
+          user.isOnboarding = false;
+          user.isNewUser = false;
+          user.onboardingThreadId = null; // Limpiar el threadId de onboarding
+          user.assistant_ID = 'asst_4aycqyziNvkiMm88Sf1CvPJg'; // Cambiar al asistente de finanzas
+          user.threadId = null; // Forzar la creación de un nuevo thread para el asistente de finanzas
+          await user.save();
+
+          // Crear un nuevo thread para el asistente de finanzas
+          const newThread = await openai.beta.threads.create();
+          user.threadId = newThread.id;
+          user.threadCreatedAt = new Date();
+          await user.save();
+
+          logger.info(`Onboarding completado para el usuario ${userId}. Nuevo Assistant ID: ${user.assistant_ID}, Nuevo Thread ID: ${user.threadId}`);
+        }
+
+        return response;
+      } else {
+        throw new Error('No se recibió respuesta del asistente de onboarding');
+      }
+    } catch (error) {
+      logger.error('Error en el proceso de onboarding:', error);
+      throw error;
+    }
+  }
+
+  async handleOnboardingFunctionCalls(toolCalls, userId) {
+    const toolOutputs = [];
+    for (const toolCall of toolCalls) {
+      const functionName = toolCall.function.name;
+      const functionArgs = JSON.parse(toolCall.function.arguments);
+
+      logger.info(`Llamada a función durante onboarding: ${functionName}`, functionArgs);
+
+      let functionResult;
+      switch (functionName) {
+        case 'recopilar_perfil_usuario':
+          functionResult = await this.recopilarPerfilUsuario(userId, functionArgs);
+          break;
+        default:
+          throw new Error(`Función no reconocida: ${functionName}`);
+      }
+
+      toolOutputs.push({
+        tool_call_id: toolCall.id,
+        output: JSON.stringify(functionResult)
+      });
+    }
+    return toolOutputs;
+  }
+
+  async recopilarPerfilUsuario(userId, args) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    logger.info(`Actualizando perfil para el usuario ${userId}. Datos recibidos:`, args);
+
+    // Actualizar el perfil del usuario con los datos proporcionados
+    if (args.nombre) user.name = args.nombre;
+    if (args.ocupacion) user.ocupacion = args.ocupacion;
+    if (args.ingreso_mensual_promedio) user.ingresoMensualPromedio = args.ingreso_mensual_promedio;
+    if (args.limite_gasto_mensual) user.limiteGastoMensual = args.limite_gasto_mensual;
+    if (args.moneda_preferencia) user.monedaPreferencia = args.moneda_preferencia;
+    if (args.ahorros_actuales) user.ahorrosActuales = args.ahorros_actuales;
+
+    await user.save();
+
+    logger.info(`Perfil actualizado. Valores actuales:`, {
+      name: user.name,
+      ocupacion: user.ocupacion,
+      ingresoMensualPromedio: user.ingresoMensualPromedio,
+      limiteGastoMensual: user.limiteGastoMensual,
+      monedaPreferencia: user.monedaPreferencia,
+      ahorrosActuales: user.ahorrosActuales
+    });
+
+    const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia && (user.ahorrosActuales !== null && user.ahorrosActuales !== undefined);
+
+    logger.info(`Perfil actualizado para el usuario ${userId}. Perfil completo: ${perfilCompleto}`);
+
+    if (perfilCompleto) {
+      user.assistant_ID = 'asst_4aycqyziNvkiMm88Sf1CvPJg'; // Cambiar al asistente de finanzas
+      user.threadId = null; // Forzar la creación de un nuevo thread para el asistente de finanzas
+      await user.save();
+
+      logger.info(`Perfil completado para el usuario ${userId}. Nuevo Assistant ID: ${user.assistant_ID}`);
+    }
+
+    return {
+      mensaje: 'Perfil de usuario actualizado exitosamente',
+      perfilCompleto,
+      perfilActualizado: {
+        nombre: user.name,
+        ocupacion: user.ocupacion,
+        ingresoMensualPromedio: user.ingresoMensualPromedio,
+        limiteGastoMensual: user.limiteGastoMensual,
+        monedaPreferencia: user.monedaPreferencia,
+        ahorrosActuales: user.ahorrosActuales
+      }
+    };
+  }
+
+  async waitForRunCompletion(threadId, runId) {
+    const maxWaitTime = 60000; // 60 segundos
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < maxWaitTime) {
+      const run = await openai.beta.threads.runs.retrieve(threadId, runId);
+      if (run.status === 'completed' || run.status === 'failed' || run.status === 'cancelled') {
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    throw new Error('El run no se completó en el tiempo esperado');
   }
 }
 
