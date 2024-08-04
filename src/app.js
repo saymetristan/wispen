@@ -22,15 +22,13 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-// Sincronizar modelos con la base de datos
-sequelize.sync({ force: true }).then(() => {
-  console.log('Base de datos y tablas creadas!');
+sequelize.sync().then(() => {
+  console.log('Base de datos conectada y sincronizada');
+  app.listen(process.env.PORT || 3000, () => {
+    console.log(`Servidor corriendo en el puerto ${process.env.PORT || 3000}`);
+  });
 }).catch((error) => {
   console.error('Error al sincronizar la base de datos:', error);
-});
-
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
 
 export default app;
