@@ -24,9 +24,11 @@ const userStatusMiddleware = async (req, res, next) => {
       assistant_ID: user.assistant_ID
     });
 
-    const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia;
+    const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia && (user.ahorrosActuales !== null && user.ahorrosActuales !== undefined);
 
-    if (perfilCompleto && (user.isNewUser || user.isOnboarding)) {
+    logger.info(`Perfil completo para el usuario ${userId}: ${perfilCompleto}`);
+
+    if (perfilCompleto && user.assistant_ID === 'asst_AUZqqVPMNJFedXX3A5fYBp7f') {
       user.assistant_ID = 'asst_4aycqyziNvkiMm88Sf1CvPJg';
       user.threadId = null;
       user.isOnboarding = false;
@@ -35,9 +37,11 @@ const userStatusMiddleware = async (req, res, next) => {
 
       logger.info(`Usuario ${userId} actualizado: perfil completo, nuevo Assistant ID asignado.`, {
         assistant_ID: user.assistant_ID,
-        isNewUser: user.isNewUser,
-        isOnboarding: user.isOnboarding
+        isOnboarding: user.isOnboarding,
+        isNewUser: user.isNewUser
       });
+    } else {
+      logger.info(`No se actualizó el usuario ${userId}. Perfil completo: ${perfilCompleto}, Assistant ID actual: ${user.assistant_ID}`);
     }
 
     next();

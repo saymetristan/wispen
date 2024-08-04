@@ -412,6 +412,7 @@ class OpenAIService {
   }
 
   async processOnboarding(userId, message = null) {
+    logger.info(`Iniciando proceso de onboarding para el usuario ${userId}`);
     try {
       const user = await User.findByPk(userId);
       let threadId = user.onboardingThreadId;
@@ -560,6 +561,8 @@ class OpenAIService {
     if (perfilCompleto) {
       user.assistant_ID = 'asst_4aycqyziNvkiMm88Sf1CvPJg'; // Cambiar al asistente de finanzas
       user.threadId = null; // Forzar la creación de un nuevo thread para el asistente de finanzas
+      user.isOnboarding = false;
+      user.isNewUser = false;
       await user.save();
 
       logger.info(`Perfil completado para el usuario ${userId}. Nuevo Assistant ID: ${user.assistant_ID}`);
