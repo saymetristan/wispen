@@ -52,6 +52,7 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
         phoneNumber: from.replace('whatsapp:', ''), 
         name: 'Unknown',
         isNewUser: true,
+        isOnboarding: true,  // Añadimos esta línea
         assistant_ID: 'asst_AUZqqVPMNJFedXX3A5fYBp7f' // ID del asistente de onboarding
       });
     }
