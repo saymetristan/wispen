@@ -4,6 +4,7 @@ import OpenAIService from '../services/openaiService.js';
 import dotenv from 'dotenv';
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
+import userStatusMiddleware from '../middleware/userStatusMiddleware.js';
 
 dotenv.config();
 
@@ -25,7 +26,7 @@ const getMessageType = (body) => {
   return 'text';
 };
 
-router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook({ validate: false }), async (req, res) => {
+router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook({ validate: false }), userStatusMiddleware, async (req, res) => {
   logger.info('Webhook recibido:', req.body);
   const incomingMsg = req.body.Body;
   const from = req.body.From;

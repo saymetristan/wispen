@@ -15,7 +15,7 @@ const userStatusMiddleware = async (req, res, next) => {
       return next();
     }
 
-    const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia && (user.ahorrosActuales !== null && user.ahorrosActuales !== undefined);
+    const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia;
 
     if (perfilCompleto && user.assistant_ID === 'asst_AUZqqVPMNJFedXX3A5fYBp7f') {
       user.assistant_ID = 'asst_4aycqyziNvkiMm88Sf1CvPJg';
