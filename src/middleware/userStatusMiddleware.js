@@ -24,7 +24,7 @@ const userStatusMiddleware = async (req, res, next) => {
       assistant_ID: user.assistant_ID
     });
 
-    const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia && (user.ahorrosActuales !== null && user.ahorrosActuales !== undefined);
+    const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia;
 
     if (perfilCompleto && (user.isNewUser || user.isOnboarding)) {
       user.assistant_ID = 'asst_4aycqyziNvkiMm88Sf1CvPJg';
