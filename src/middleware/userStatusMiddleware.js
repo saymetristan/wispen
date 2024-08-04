@@ -30,18 +30,22 @@ const userStatusMiddleware = async (req, res, next) => {
 
     if (perfilCompleto && user.assistant_ID === 'asst_AUZqqVPMNJFedXX3A5fYBp7f') {
       user.assistant_ID = 'asst_4aycqyziNvkiMm88Sf1CvPJg';
-      user.threadId = null;
+      // Solo establecemos threadId a null si aún no existe
+      if (!user.threadId) {
+        user.threadId = null;
+      }
       user.isOnboarding = false;
       user.isNewUser = false;
       await user.save();
 
       logger.info(`Usuario ${userId} actualizado: perfil completo, nuevo Assistant ID asignado.`, {
         assistant_ID: user.assistant_ID,
+        threadId: user.threadId,
         isOnboarding: user.isOnboarding,
         isNewUser: user.isNewUser
       });
     } else {
-      logger.info(`No se actualizó el usuario ${userId}. Perfil completo: ${perfilCompleto}, Assistant ID actual: ${user.assistant_ID}`);
+      logger.info(`No se actualizó el usuario ${userId}. Perfil completo: ${perfilCompleto}, Assistant ID actual: ${user.assistant_ID}, ThreadId: ${user.threadId}`);
     }
 
     next();
