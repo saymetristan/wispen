@@ -96,7 +96,7 @@ class OpenAIService {
         logger.info(`Procesando mensaje para el usuario ${userId}. Assistant ID actual: ${user.assistant_ID}`);
 
         // Verificar si el perfil está completo
-        const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia && (user.ahorrosActuales !== null && user.ahorrosActuales !== undefined);
+        const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia && (user.ahorrosActuales !== undefined);
 
         if (!perfilCompleto) {
           logger.info(`Perfil incompleto para el usuario ${userId}. Redirigiendo al onboarding.`);
@@ -105,8 +105,8 @@ class OpenAIService {
 
         let threadId = await this.getOrCreateThread(userId);
 
-        // Si el assistant_ID ha cambiado, crear un nuevo thread
-        if (user.assistant_ID !== 'asst_AUZqqVPMNJFedXX3A5fYBp7f' && user.threadId) {
+        // Si el assistant_ID ha cambiado, crear un nuevo thread solo si no existe uno
+        if (user.assistant_ID !== 'asst_AUZqqVPMNJFedXX3A5fYBp7f' && !user.threadId) {
           logger.info(`Detectado cambio de Assistant ID para el usuario ${userId}. Creando nuevo thread.`);
           const newThread = await openai.beta.threads.create();
           user.threadId = newThread.id;
@@ -415,12 +415,13 @@ class OpenAIService {
     logger.info(`Iniciando proceso de onboarding para el usuario ${userId}`);
     try {
       const user = await User.findByPk(userId);
-      let threadId = user.onboardingThreadId;
+      let threadId = user.onboardingThreadId || user.threadId;
 
       if (!threadId || this.isThreadExpired(user.threadCreatedAt)) {
         const thread = await openai.beta.threads.create();
         threadId = thread.id;
         user.onboardingThreadId = threadId;
+        user.threadId = threadId;
         user.threadCreatedAt = new Date();
         await user.save();
       }
@@ -541,7 +542,7 @@ class OpenAIService {
     if (args.ingreso_mensual_promedio) user.ingresoMensualPromedio = args.ingreso_mensual_promedio;
     if (args.limite_gasto_mensual) user.limiteGastoMensual = args.limite_gasto_mensual;
     if (args.moneda_preferencia) user.monedaPreferencia = args.moneda_preferencia;
-    if (args.ahorros_actuales) user.ahorrosActuales = args.ahorros_actuales;
+    if (args.ahorros_actuales !== undefined) user.ahorrosActuales = args.ahorros_actuales;
 
     await user.save();
 
@@ -554,18 +555,25 @@ class OpenAIService {
       ahorrosActuales: user.ahorrosActuales
     });
 
-    const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia && (user.ahorrosActuales !== null && user.ahorrosActuales !== undefined);
+    const perfilCompleto = user.name && user.ocupacion && user.ingresoMensualPromedio && user.limiteGastoMensual && user.monedaPreferencia && (user.ahorrosActuales !== undefined);
 
     logger.info(`Perfil actualizado para el usuario ${userId}. Perfil completo: ${perfilCompleto}`);
 
     if (perfilCompleto) {
       user.assistant_ID = 'asst_4aycqyziNvkiMm88Sf1CvPJg'; // Cambiar al asistente de finanzas
-      user.threadId = null; // Forzar la creación de un nuevo thread para el asistente de finanzas
       user.isOnboarding = false;
       user.isNewUser = false;
+
+      // Crear un nuevo thread para el asistente de finanzas si no existe
+      if (!user.threadId) {
+        const newThread = await openai.beta.threads.create();
+        user.threadId = newThread.id;
+        user.threadCreatedAt = new Date();
+      }
+
       await user.save();
 
-      logger.info(`Perfil completado para el usuario ${userId}. Nuevo Assistant ID: ${user.assistant_ID}`);
+      logger.info(`Perfil completado para el usuario ${userId}. Nuevo Assistant ID: ${user.assistant_ID}, Thread ID: ${user.threadId}`);
     }
 
     return {
