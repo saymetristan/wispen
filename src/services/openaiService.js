@@ -85,7 +85,7 @@ class OpenAIService {
   async processMessage(message, userId, mediaUrl = null) {
     const maxRetries = 3;
     let retries = 0;
-    
+  
     while (retries < maxRetries) {
       try {
         const user = await User.findByPk(userId);
@@ -274,7 +274,7 @@ class OpenAIService {
           logger.info(`Generando reporte para usuario ${userId} con parámetros:`, functionArgs);
           functionResult = await this.generarReporte(userId, functionArgs);
           break;
-        case 'actualizar_usuario':
+        case 'actualizar_perfil_usuario':
           functionResult = await this.actualizarUsuario(userId, functionArgs);
           break;
         case 'mostrar_info_usuario':
