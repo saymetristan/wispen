@@ -274,8 +274,8 @@ class OpenAIService {
           logger.info(`Generando reporte para usuario ${userId} con parámetros:`, functionArgs);
           functionResult = await this.generarReporte(userId, functionArgs);
           break;
-        case 'recopilar_perfil_usuario':
-          functionResult = await this.recopilarPerfilUsuario(userId, functionArgs);
+        case 'actualizar_usuario':
+          functionResult = await this.actualizarUsuario(userId, functionArgs);
           break;
         default:
           throw new Error(`Función no reconocida: ${functionName}`);
@@ -404,6 +404,37 @@ class OpenAIService {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     throw new Error('El run no se completó en el tiempo esperado');
+  }
+
+  async actualizarUsuario(userId, args) {
+    const { nombre, ocupacion, ingreso_mensual_promedio, limite_gasto_mensual, moneda_preferencia, ahorros_actuales } = args;
+    
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    user.name = nombre;
+    user.ocupacion = ocupacion;
+    user.ingresoMensualPromedio = ingreso_mensual_promedio;
+    user.limiteGastoMensual = limite_gasto_mensual;
+    user.monedaPreferencia = moneda_preferencia;
+    user.ahorrosActuales = ahorros_actuales;
+
+    await user.save();
+
+    return {
+      success: true,
+      message: 'Información del usuario actualizada correctamente',
+      updatedUser: {
+        nombre: user.name,
+        ocupacion: user.ocupacion,
+        ingreso_mensual_promedio: user.ingresoMensualPromedio,
+        limite_gasto_mensual: user.limiteGastoMensual,
+        moneda_preferencia: user.monedaPreferencia,
+        ahorros_actuales: user.ahorrosActuales
+      }
+    };
   }
 }
 
