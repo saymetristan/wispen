@@ -85,7 +85,7 @@ class OpenAIService {
   async processMessage(message, userId, mediaUrl = null) {
     const maxRetries = 3;
     let retries = 0;
-  
+
     while (retries < maxRetries) {
       try {
         const user = await User.findByPk(userId);
@@ -274,9 +274,9 @@ class OpenAIService {
           logger.info(`Generando reporte para usuario ${userId} con parámetros:`, functionArgs);
           functionResult = await this.generarReporte(userId, functionArgs);
           break;
-        case 'actualizar_perfil_usuario':
-          functionResult = await this.actualizarUsuario(userId, functionArgs);
-          break;
+          case 'actualizar_perfil_usuario':
+            functionResult = await this.actualizarUsuario(userId, functionArgs);
+            break;
         case 'mostrar_info_usuario':
           functionResult = await this.mostrarInfoUsuario(userId);
           break;
@@ -417,12 +417,13 @@ class OpenAIService {
       throw new Error('Usuario no encontrado');
     }
 
-    user.name = nombre;
-    user.ocupacion = ocupacion;
-    user.ingresoMensualPromedio = ingreso_mensual_promedio;
-    user.limiteGastoMensual = limite_gasto_mensual;
-    user.monedaPreferencia = moneda_preferencia;
-    user.ahorrosActuales = ahorros_actuales;
+    // Actualizar solo los campos proporcionados
+    if (nombre !== undefined) user.name = nombre;
+    if (ocupacion !== undefined) user.ocupacion = ocupacion;
+    if (ingreso_mensual_promedio !== undefined) user.ingresoMensualPromedio = ingreso_mensual_promedio;
+    if (limite_gasto_mensual !== undefined) user.limiteGastoMensual = limite_gasto_mensual;
+    if (moneda_preferencia !== undefined) user.monedaPreferencia = moneda_preferencia;
+    if (ahorros_actuales !== undefined) user.ahorrosActuales = ahorros_actuales;
 
     await user.save();
 
