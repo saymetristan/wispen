@@ -277,6 +277,9 @@ class OpenAIService {
         case 'actualizar_usuario':
           functionResult = await this.actualizarUsuario(userId, functionArgs);
           break;
+        case 'mostrar_info_usuario':
+          functionResult = await this.mostrarInfoUsuario(userId);
+          break;
         default:
           throw new Error(`Función no reconocida: ${functionName}`);
       }
@@ -434,6 +437,23 @@ class OpenAIService {
         moneda_preferencia: user.monedaPreferencia,
         ahorros_actuales: user.ahorrosActuales
       }
+    };
+  }
+
+  async mostrarInfoUsuario(userId) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    return {
+      nombre: user.name,
+      ocupacion: user.ocupacion,
+      ingreso_mensual_promedio: user.ingresoMensualPromedio,
+      limite_gasto_mensual: user.limiteGastoMensual,
+      moneda_preferencia: user.monedaPreferencia,
+      ahorros_actuales: user.ahorrosActuales,
+      balance: user.balance
     };
   }
 }
