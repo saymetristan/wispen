@@ -76,7 +76,7 @@ class OpenAIService {
 
       return file.id;
     } catch (error) {
-      console.error('Error al subir la imagen a OpenAI:', error);
+      logger.error('Error al subir la imagen a OpenAI:', error);
       throw error;
     }
   }
@@ -163,7 +163,7 @@ class OpenAIService {
           throw new Error('No se recibió respuesta del asistente');
         }
       } catch (error) {
-        console.error(`Error en el intento ${retries + 1}:`, error);
+        logger.error(`Error en el intento ${retries + 1}:`, error);
         retries++;
         if (retries >= maxRetries) {
           throw new Error('Se alcanzó el número máximo de intentos');
@@ -210,13 +210,13 @@ class OpenAIService {
         response_format: "text"
       });
 
-      console.log('Respuesta de transcripción:', transcription);
+      logger.info('Respuesta de transcripción:', transcription);
 
       if (!transcription) {
         throw new Error('La transcripción está vacía o no se obtuvo correctamente');
       }
 
-      console.log('Transcripción obtenida:', transcription);
+      logger.info('Transcripción obtenida:', transcription);
 
       // Eliminar archivos temporales
       await unlinkAsync(tempFilePath);
@@ -225,7 +225,7 @@ class OpenAIService {
       // Procesar el mensaje transcrito
       return await this.processMessage(transcription, userId);
     } catch (error) {
-      console.error('Error al procesar la nota de voz:', error);
+      logger.error('Error al procesar la nota de voz:', error);
       throw error;
     }
   }
@@ -245,7 +245,7 @@ class OpenAIService {
           functionResult = await this.consultarSaldo(userId);
           break;
         case 'generar_reporte':
-          console.log(`Generando reporte para usuario ${userId} con parámetros:`, functionArgs);
+          logger.info(`Generando reporte para usuario ${userId} con parámetros:`, functionArgs);
           functionResult = await this.generarReporte(userId, functionArgs);
           break;
         default:

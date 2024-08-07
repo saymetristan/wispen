@@ -10,24 +10,24 @@ const router = express.Router();
 
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 
-console.log('Twilio Auth Token:', twilioAuthToken);
+logger.info('Twilio Auth Token:', twilioAuthToken);
 
 router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook({ validate: false }), async (req, res) => {
-  console.log('Webhook recibido:', req.body);
+  logger.info('Webhook recibido:', req.body);
   const incomingMsg = req.body.Body;
   const from = req.body.From;
   const waId = req.body.WaId;
   const mediaUrl = req.body.NumMedia > 0 ? req.body.MediaUrl0 : null;
   const mediaType = req.body.MediaContentType0;
 
-  console.log('Mensaje recibido:', incomingMsg);
-  console.log('De:', from);
-  console.log('WaId:', waId);
-  console.log('Media URL:', mediaUrl);
+  logger.info('Mensaje recibido:', incomingMsg);
+  logger.info('De:', from);
+  logger.info('WaId:', waId);
+  logger.info('Media URL:', mediaUrl);
 
   try {
     if (!incomingMsg && !mediaUrl) {
-      console.log('Cuerpo de la solicitud:', req.body);
+      logger.info('Cuerpo de la solicitud:', req.body);
       res.status(400).send('No se recibió ningún mensaje ni imagen');
       return;
     }
@@ -80,9 +80,9 @@ Estoy aquí para ayudarte a manejar tus finanzas de forma fácil y divertida. �
 
     res.writeHead(200, {'Content-Type': 'text/xml'});
     res.end(twiml.toString());
-    console.log('Respuesta enviada:', twiml.toString());
+    logger.info('Respuesta enviada:', twiml.toString());
   } catch (error) {
-    console.error('Error procesando la solicitud:', error);
+    logger.error('Error procesando la solicitud:', error);
     const twiml = new twilio.twiml.MessagingResponse();
     twiml.message('Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo más tarde.');
     res.writeHead(200, {'Content-Type': 'text/xml'});

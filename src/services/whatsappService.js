@@ -16,10 +16,10 @@ class WhatsAppService {
         to: `whatsapp:${to}`
       });
 
-      console.log(`Message sent successfully. SID: ${message.sid}`);
+      logger.info(`Message sent successfully. SID: ${message.sid}`);
       return message;
     } catch (error) {
-      console.error('Error sending WhatsApp message:', error);
+      logger.error('Error sending WhatsApp message:', error);
       throw error;
     }
   }

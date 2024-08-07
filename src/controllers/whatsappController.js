@@ -7,7 +7,7 @@ class WhatsAppController {
       const response = await openaiService.processMessage(message);
       res.json({ response });
     } catch (error) {
-      console.error('Error:', error);
+      logger.error('Error:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   }
