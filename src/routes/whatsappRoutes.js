@@ -63,6 +63,8 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
 💡 Recibe consejos para mejorar tu economía
 
 ¿Comenzamos? Mándame un gasto o un ingreso y yo me encargo del resto 😉
+Puedes escribirme, mandarme notas de voz o imagenes de tus recibos.
+
 Tambien puedes en cualquier momento actualizar tu perfil, solo pidelo.
 
 Tip: Ponle 📌 a esta conversación para tenerla siempre a mano`);
