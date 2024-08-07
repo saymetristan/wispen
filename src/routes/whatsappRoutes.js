@@ -51,10 +51,15 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
         id: waId, 
         phoneNumber: from.replace('whatsapp:', ''), 
         name: 'Unknown',
-        isNewUser: true,
-        isOnboarding: true,  // Añadimos esta línea
-        assistant_ID: 'asst_AUZqqVPMNJFedXX3A5fYBp7f' // ID del asistente de onboarding
+        assistant_ID: 'asst_4aycqyziNvkiMm88Sf1CvPJg'
       });
+      
+      // Enviar mensaje de bienvenida
+      const twiml = new twilio.twiml.MessagingResponse();
+      twiml.message('¡Bienvenido a Wispen! Estoy aquí para ayudarte con tus finanzas personales. ¿En qué puedo asistirte hoy?');
+      res.writeHead(200, {'Content-Type': 'text/xml'});
+      res.end(twiml.toString());
+      return;
     }
 
     const twiml = new twilio.twiml.MessagingResponse();
