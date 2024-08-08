@@ -56,19 +56,19 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
       
       // Enviar mensaje de bienvenida
       const twiml = new twilio.twiml.MessagingResponse();
-      twiml.message(`¡Ey, siguiente magnate! 👋💰 Soy Wispen, tu gurú financiero dinero. Prepárate para dominar tus finanzas más rápido que un meme viral:
+      twiml.message(`¡Ey, siguiente magnate! 👋💰 Soy Wispen, tu gurú financiero dinero. Prepárate para dominar tus finanzas:
 
 📝 Registra gastos e ingresos 
 📊 Solicita reportes financieros
 💡 Pide consejos para hacer que tu dinero trabaje más duro que tú
 
-¿Listo para el desafío? ¡Mándame un gasto o ingreso y observa cómo hago magia con los números! 🤹‍♂️
+¡Mándame un gasto o ingreso y observa cómo hago magia con los números! 🤹‍♂️
 
-Puedes hablarme, mandarme notas de voz o fotos de ese recibo arrugado del fin de semana. 
+Puedes hablarme, mandarme notas de voz o fotos de ese recibo arrugado del fin de semana. 🧾
 
 ¿Quieres actualizar tu perfil? Solo pídelo.
 
-¿Necesitas una excusa creativa para ese gasto culposo? Pídeme activar el Excusómetro3000 y prepárate para reír.
+¿Necesitas una excusa creativa para ese gasto culposo? Pídeme activar el Excusómetro3000.
 
 Pon 📌 a esta conversación. Tu yo del futuro te lo agradecerá (y tal vez hasta te invite un café).
 
