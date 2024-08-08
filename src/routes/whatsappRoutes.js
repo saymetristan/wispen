@@ -56,7 +56,7 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
       
       // Enviar mensaje de bienvenida
       const twiml = new twilio.twiml.MessagingResponse();
-      twiml.message(`¡Ey, siguiente magnate! 👋💰 Soy Wispen, tu gurú financiero dinero. Prepárate para dominar tus finanzas:
+      twiml.message(`¡Ey, siguiente magnate! 👋💰 Soy Wispen, tu gurú financiero. Dominemos juntos tus finanzas:
 
 📝 Registra gastos e ingresos 
 📊 Solicita reportes financieros
@@ -64,7 +64,7 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
 
 ¡Mándame un gasto o ingreso y observa cómo hago magia con los números! 🤹‍♂️
 
-Puedes hablarme, mandarme notas de voz o fotos de ese recibo arrugado del fin de semana. 🧾
+Puedes hablarme, mandarme notas de voz o fotos de tus recibos, yo me encargo de analizarlos y registrarlos.🧐
 
 ¿Quieres actualizar tu perfil? Solo pídelo.
 
