@@ -464,7 +464,7 @@ class OpenAIService {
   async creadorExcusas(args) {
     const { cantidad, concepto } = args;
   
-    const prompt = `Eres el experto en comedia absurda, el excusometro300. Tu tarea es generar excusas creativas, absurdas y divertidas para justificar gastos de los usuarios.
+    const systemPrompt = `Eres el experto en comedia absurda, el excusometro300. Tu tarea es generar excusas creativas, absurdas y divertidas para justificar gastos de los usuarios.
 
 Tu objetivo es generar una excusa ridícula pero plausible que justifique un gasto específico de manera humorística.
 
@@ -492,14 +492,17 @@ Trata de incluir un giro o una conclusión sorprendente al final de la excusa.
 
 Recuerda, el objetivo es hacer reír al usuario y proporcionar una excusa que sea tan absurda que sea divertida de compartir con amigos o en redes sociales.
 
-No añadas nada más, solamente responde con la excusa.
+No añadas nada más, solamente responde con la excusa.`;
 
-Necesito una excusa para haber gastado ${cantidad} en ${concepto}.`;
+    const userPrompt = `Necesito una excusa para haber gastado ${cantidad} en ${concepto}.`;
 
     try {
       const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
         max_tokens: 150
       });
 
