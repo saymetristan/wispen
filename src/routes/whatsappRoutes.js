@@ -56,18 +56,23 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
       
       // Enviar mensaje de bienvenida
       const twiml = new twilio.twiml.MessagingResponse();
-      twiml.message(`¡Hola! 👋 Soy Wispen, tu nuevo asistente financiero en WhatsApp 💰✨ Estoy aquí para hacer tu vida financiera más fácil:
+      twiml.message(`¡Ey, siguiente magnate! 👋💰 Soy Wispen, tu gurú financiero dinero. Prepárate para dominar tus finanzas más rápido que un meme viral:
 
-📝 Registra gastos e ingresos con un simple mensaje
-📊 Obtén reportes de tus finanzas cuando los necesites
-💡 Recibe consejos para mejorar tu economía
+📝 Registra gastos e ingresos 
+📊 Solicita reportes financieros
+💡 Pide consejos para hacer que tu dinero trabaje más duro que tú
 
-¿Comenzamos? Mándame un gasto o un ingreso y yo me encargo del resto 😉
-Puedes escribirme, mandarme notas de voz o imagenes de tus recibos.
+¿Listo para el desafío? ¡Mándame un gasto o ingreso y observa cómo hago magia con los números! 🤹‍♂️
 
-Tambien puedes en cualquier momento actualizar tu perfil, solo pidelo.
+Puedes hablarme, mandarme notas de voz o fotos de ese recibo arrugado del fin de semana. 
 
-Tip: Ponle 📌 a esta conversación para tenerla siempre a mano`);
+¿Quieres actualizar tu perfil? Solo pídelo.
+
+¿Necesitas una excusa creativa para ese gasto culposo? Pídeme activar el Excusómetro3000 y prepárate para reír.
+
+Pon 📌 a esta conversación. Tu yo del futuro te lo agradecerá (y tal vez hasta te invite un café).
+
+¡Vamos a hacer que tu dinero trabaje más duro que tú en lunes por la mañana! 💪💸`);
       res.writeHead(200, {'Content-Type': 'text/xml'});
       res.end(twiml.toString());
       return;
