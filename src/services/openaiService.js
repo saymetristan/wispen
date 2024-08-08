@@ -498,7 +498,7 @@ No añadas nada más, solamente responde con la excusa.`;
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o-2024-08-06",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
