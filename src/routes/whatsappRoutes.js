@@ -51,35 +51,36 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
         id: waId, 
         phoneNumber: from.replace('whatsapp:', ''), 
         name: 'Unknown',
-        assistant_ID: 'asst_4aycqyziNvkiMm88Sf1CvPJg'
+        assistant_ID: 'asst_4aycqyziNvkiMm88Sf1CvPJg',
+        isOnboarding: true
       });
 
       // Enviar mensajes de bienvenida
       const twiml = new twilio.twiml.MessagingResponse();
-      twiml.message(`¡hola, humano con billetera! 👋💸 soy wispen, tu nuevo gurú financiero de bolsillo. estoy aquí para transformar tu caos monetario en una sinfonía de centavos:  
-        
-        📝 cuéntame tus gastos e ingresos: mensaje, nota de voz o foto de tus recibos 
-        📊 pídeme reportes financieros  
-        💡 solicita consejos para que tu dinero trabaje más duro  
-        
-        dame un momento para crear tu perfil de superhéroe financiero. ¡es más rápido que decir "compra impulsiva" 47 veces! 🦸‍♂️💨`);
+      twiml.message(`¡hola, humano con billetera! 👋💸 soy wispen, tu nuevo gurú financiero de bolsillo. estoy aquí para transformar tu caos monetario en una sinfonía de centavos:
+
+📝 cuéntame tus gastos e ingresos: mensaje, nota de voz o foto de tus recibos 
+📊 pídeme reportes financieros
+💡 solicita consejos para que tu dinero trabaje más duro
+
+dame un momento para crear tu perfil de superhéroe financiero. ¡es más rápido que decir "compra impulsiva" 47 veces! 🦸‍♂️💨`);
       res.writeHead(200, {'Content-Type': 'text/xml'});
       res.end(twiml.toString());
 
       // Esperar 40 segundos antes de enviar el segundo mensaje
       setTimeout(async () => {
         const twiml2 = new twilio.twiml.MessagingResponse();
-        twiml2.message(`¡boom! tu perfil está listo y enlazado a tu número : *${from.replace('whatsapp:', '')}*.
+        twiml2.message(`¡boom! tu perfil está listo y enlazado a tu número : *${from.replace('whatsapp:', ‘’)}*.
 
-          eres oficialmente parte del club de los financieramente sabios 🧠💰
+eres oficialmente parte del club de los financieramente sabios 🧠💰
 
-          ¿listo para el show? lánzame un gasto o un ingreso. yo me encargo del resto, como un mago financiero, pero sin el sombrero ridículo 🎩✨
+¿listo para el show? lánzame un gasto o un ingreso. yo me encargo del resto, como un mago financiero, pero sin el sombrero ridículo 🎩✨
 
-          recuerda, puedes hablarme, mandarme notas de voz (serenatas financieras bienvenidas), o lanzarme fotos de tus recibos.
+recuerda, puedes hablarme, mandarme notas de voz (serenatas financieras bienvenidas), o lanzarme fotos de tus recibos.
 
-          ¿quieres actualizar tu perfil? solo dilo. soy todo oídos (y unos cuantos chips de ia).
+¿quieres actualizar tu perfil? solo dilo. soy todo oídos (y unos cuantos chips de ia).
 
-          tip: ponle 📌 a nuestra conversación. así me tendrás siempre a mano 😉`);
+tip: ponle 📌 a nuestra conversación. así me tendrás siempre a la mano 😉`);
         await client.messages.create({
           from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
           body: twiml2.toString(),
@@ -90,16 +91,20 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
         const twiml3 = new twilio.twiml.MessagingResponse();
         twiml3.message(`🤘💰 gracias por subirse a esta montaña rusa llamada wispen. por tu confianza en nosotros, todas las funciones que ves ahora serán tuyas, gratis, por siempre jamás.
 
-          si en el futuro agregamos funciones premium (ya sabes, para mantener a nuestros hamsters generadores de ia bien alimentados), te lo haremos saber.
+si en el futuro agregamos funciones premium (ya sabes, para mantener a nuestros hamsters generadores de ia bien alimentados), te lo haremos saber.
 
-          pero por ahora, disfruta de tu pase vip al mundo de las finanzas inteligentes. ¡eres la nata de nuestro café financiero! ☕💸
-          
-          atte. el wispen team 🫂🫰`);
+pero por ahora, disfruta de tu pase vip al mundo de las finanzas inteligentes. ¡eres la nata de nuestro café financiero! ☕💸
+
+atte. el wispen team 🫂🫰`);
         await client.messages.create({
           from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
           body: twiml3.toString(),
           to: from
         });
+
+        // Marcar el onboarding como completado
+        user.isOnboarding = false;
+        await user.save();
       }, 40000);
 
       return;

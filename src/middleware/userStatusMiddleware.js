@@ -13,6 +13,11 @@ const userStatusMiddleware = async (req, res, next) => {
     const user = await User.findByPk(userId);
 
     if (user) {
+      if (user.isOnboarding) {
+        logger.info(`El usuario ${userId} está en proceso de onboarding. Ignorando el mensaje.`);
+        return res.status(200).send('El usuario está en proceso de onboarding.');
+      }
+
       logger.info(`Estado actual del usuario ${userId}:`, {
         name: user.name,
         assistant_ID: user.assistant_ID,
