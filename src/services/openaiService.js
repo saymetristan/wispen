@@ -88,8 +88,8 @@ class OpenAIService {
 
     while (retries < maxRetries) {
       try {
-        // Mover esta verificación al principio de la función
-        if (message && message.trim().toLowerCase().startsWith('\\feedback')) {
+        // Mover esta verificación al principio de la función y cambiar '\feedback' por '/feedback'
+        if (message && message.trim().toLowerCase().startsWith('/feedback')) {
           logger.info(`Procesando feedback para el usuario ${userId}: ${message}`);
           return await this.processFeedback(message.slice(9).trim(), userId);
         }
@@ -198,7 +198,7 @@ class OpenAIService {
         logger.error(`Error en el intento ${retries + 1}:`, error);
         retries++;
         if (retries >= maxRetries) {
-          throw new Error('Se alcanzó el número m��ximo de intentos');
+          throw new Error('Se alcanzó el número máximo de intentos');
         }
         await new Promise(resolve => setTimeout(resolve, 2000 * retries)); // Espera exponencial
       }
