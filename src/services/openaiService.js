@@ -88,6 +88,10 @@ class OpenAIService {
 
     while (retries < maxRetries) {
       try {
+        if (message && message.trim().toLowerCase().startsWith('\\feedback')) {
+          return await this.processFeedback(message.slice(9).trim(), userId);
+        }
+
         const user = await User.findByPk(userId);
         if (!user) {
           throw new Error('Usuario no encontrado');
@@ -96,10 +100,6 @@ class OpenAIService {
         logger.info(`Procesando mensaje para el usuario ${userId}. Assistant ID actual: ${user.assistant_ID}`);
 
         let threadId = await this.getOrCreateThread(userId);
-
-        if (message && message.trim().toLowerCase().startsWith('\\feedback')) {
-          return await this.processFeedback(message.slice(9).trim(), userId);
-        }
 
         // Verificar si hay un run activo
         const runs = await openai.beta.threads.runs.list(threadId);
@@ -243,7 +243,7 @@ class OpenAIService {
       logger.info('Respuesta de transcripción:', transcription);
 
       if (!transcription) {
-        throw new Error('La transcripción está vacía o no se obtuvo correctamente');
+        throw new Error('La transcripci��n está vacía o no se obtuvo correctamente');
       }
 
       logger.info('Transcripción obtenida:', transcription);
