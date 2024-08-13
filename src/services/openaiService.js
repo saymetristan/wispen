@@ -88,7 +88,9 @@ class OpenAIService {
 
     while (retries < maxRetries) {
       try {
+        // Mover esta verificación al principio de la función
         if (message && message.trim().toLowerCase().startsWith('\\feedback')) {
+          logger.info(`Procesando feedback para el usuario ${userId}: ${message}`);
           return await this.processFeedback(message.slice(9).trim(), userId);
         }
 
@@ -196,7 +198,7 @@ class OpenAIService {
         logger.error(`Error en el intento ${retries + 1}:`, error);
         retries++;
         if (retries >= maxRetries) {
-          throw new Error('Se alcanzó el número máximo de intentos');
+          throw new Error('Se alcanzó el número m��ximo de intentos');
         }
         await new Promise(resolve => setTimeout(resolve, 2000 * retries)); // Espera exponencial
       }
@@ -243,7 +245,7 @@ class OpenAIService {
       logger.info('Respuesta de transcripción:', transcription);
 
       if (!transcription) {
-        throw new Error('La transcripci��n está vacía o no se obtuvo correctamente');
+        throw new Error('La transcripción está vacía o no se obtuvo correctamente');
       }
 
       logger.info('Transcripción obtenida:', transcription);
@@ -518,6 +520,7 @@ No añadas nada más, solamente responde con la excusa.`;
   }
 
   async processFeedback(feedbackMessage, userId) {
+    logger.info(`Procesando feedback: ${feedbackMessage} para el usuario ${userId}`);
     const user = await User.findByPk(userId);
     if (!user) {
       throw new Error('Usuario no encontrado');
@@ -530,7 +533,8 @@ No añadas nada más, solamente responde con la excusa.`;
     };
 
     try {
-      await axios.post(webhookUrl, feedbackData);
+      const response = await axios.post(webhookUrl, feedbackData);
+      logger.info(`Feedback enviado a Discord. Respuesta: ${response.status}`);
       return '¡gracias por compartir tu opinión! 🙏 tu feedback es como el café para nuestro cerebro financiero: nos mantiene despiertos y en constante mejora. ☕💡';
     } catch (error) {
       logger.error('Error al enviar feedback a Discord:', error);
