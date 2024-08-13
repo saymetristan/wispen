@@ -10,7 +10,9 @@ dotenv.config();
 
 const router = express.Router();
 
-const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = twilio(accountSid, authToken);
 
 // Función para validar el número de teléfono
 const isValidPhoneNumber = (phoneNumber) => {
