@@ -10,9 +10,9 @@ dotenv.config();
 
 const router = express.Router();
 
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = twilio(accountSid, authToken);
+const client = twilio(accountSid, twilioAuthToken);
 
 // Función para validar el número de teléfono
 const isValidPhoneNumber = (phoneNumber) => {
@@ -71,8 +71,7 @@ dame un momento para crear tu perfil de superhéroe financiero. ¡es más rápid
 
       // Esperar 40 segundos antes de enviar el segundo mensaje
       setTimeout(async () => {
-        const twiml2 = new twilio.twiml.MessagingResponse();
-        twiml2.message(`¡boom! tu perfil está listo y enlazado a tu número : *${from.replace('whatsapp:', '')}*.
+        const mensaje2 = `¡boom! tu perfil está listo y enlazado a tu número : *${from.replace('whatsapp:', '')}*.
 
 eres oficialmente parte del club de los financieramente sabios 🧠💰
 
@@ -82,25 +81,26 @@ recuerda, puedes hablarme, mandarme notas de voz (serenatas financieras bienveni
 
 ¿quieres actualizar tu perfil? solo dilo. soy todo oídos (y unos cuantos chips de ia).
 
-tip: ponle 📌 a nuestra conversación. así me tendrás siempre a la mano 😉`);
+tip: ponle 📌 a nuestra conversación. así me tendrás siempre a la mano 😉`;
+
         await client.messages.create({
           from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-          body: twiml2.toString(),
+          body: mensaje2,
           to: from
         });
 
         // Enviar el tercer mensaje
-        const twiml3 = new twilio.twiml.MessagingResponse();
-        twiml3.message(`🤘💰 gracias por subirse a esta montaña rusa llamada wispen. por tu confianza en nosotros, todas las funciones que ves ahora serán tuyas, gratis, por siempre jamás.
+        const mensaje3 = `🤘💰 gracias por subirse a esta montaña rusa llamada wispen. por tu confianza en nosotros, todas las funciones que ves ahora serán tuyas, gratis, por siempre jamás.
 
 si en el futuro agregamos funciones premium (ya sabes, para mantener a nuestros hamsters generadores de ia bien alimentados), te lo haremos saber.
 
 pero por ahora, disfruta de tu pase vip al mundo de las finanzas inteligentes. ¡eres la nata de nuestro café financiero! ☕💸
 
-atte. el wispen team 🫂🫰`);
+atte. el wispen team 🫂🫰`;
+
         await client.messages.create({
           from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-          body: twiml3.toString(),
+          body: mensaje3,
           to: from
         });
 
