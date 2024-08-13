@@ -97,6 +97,10 @@ class OpenAIService {
 
         let threadId = await this.getOrCreateThread(userId);
 
+        if (message && message.trim().toLowerCase().startsWith('\\feedback')) {
+          return await this.processFeedback(message.slice(9).trim(), userId);
+        }
+
         // Verificar si hay un run activo
         const runs = await openai.beta.threads.runs.list(threadId);
         const activeRun = runs.data.find(run => run.status === 'in_progress' || run.status === 'queued');
@@ -510,6 +514,27 @@ No añadas nada más, solamente responde con la excusa.`;
     } catch (error) {
       logger.error('Error al generar excusa:', error);
       throw new Error('No se pudo generar una excusa en este momento');
+    }
+  }
+
+  async processFeedback(feedbackMessage, userId) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    const webhookUrl = 'https://discord.com/api/webhooks/1272776181724483624/zv_VQDyB2HVawkIJmnCV0zxjkr7N1F95G9FAf5futNalDojrPr9GQZsVQO2MFNArRvlc';
+  
+    const feedbackData = {
+      content: `Feedback de usuario ${user.phoneNumber}:\n${feedbackMessage}`
+    };
+
+    try {
+      await axios.post(webhookUrl, feedbackData);
+      return '¡gracias por compartir tu opinión! 🙏 tu feedback es como el café para nuestro cerebro financiero: nos mantiene despiertos y en constante mejora. ☕💡';
+    } catch (error) {
+      logger.error('Error al enviar feedback a Discord:', error);
+      throw new Error('No se pudo procesar el feedback en este momento');
     }
   }
 }

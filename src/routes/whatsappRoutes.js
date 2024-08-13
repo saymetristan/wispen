@@ -90,7 +90,7 @@ tip: ponle 📌 a nuestra conversación. así me tendrás siempre a la mano 😉
         });
 
         // Enviar el tercer mensaje
-        const mensaje3 = `🤘💰 gracias por subirse a esta montaña rusa llamada wispen. por tu confianza en nosotros, todas las funciones que ves ahora serán tuyas, gratis, por siempre jamás.
+        const mensaje3 = `🤘💰 gracias por subirte a esta montaña rusa llamada wispen. por tu confianza en nosotros, todas las funciones que ves ahora serán tuyas, gratis, por siempre jamás.
 
 si en el futuro agregamos funciones premium (ya sabes, para mantener a nuestros hamsters generadores de ia bien alimentados), te lo haremos saber.
 
