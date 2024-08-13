@@ -70,7 +70,7 @@ dame un momento para crear tu perfil de superhéroe financiero. ¡es más rápid
       // Esperar 40 segundos antes de enviar el segundo mensaje
       setTimeout(async () => {
         const twiml2 = new twilio.twiml.MessagingResponse();
-        twiml2.message(`¡boom! tu perfil está listo y enlazado a tu número : *${from.replace('whatsapp:', ‘’)}*.
+        twiml2.message(`¡boom! tu perfil está listo y enlazado a tu número : *${from.replace('whatsapp:', '')}*.
 
 eres oficialmente parte del club de los financieramente sabios 🧠💰
 
