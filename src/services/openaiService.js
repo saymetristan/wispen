@@ -94,6 +94,11 @@ class OpenAIService {
           return await this.processFeedback(message.slice(9).trim(), userId);
         }
 
+        if (message && message.trim().toLowerCase() === '/instrucciones') {
+          logger.info(`Procesando solicitud de instrucciones para el usuario ${userId}`);
+          return this.provideInstructions();
+        }
+
         const user = await User.findByPk(userId);
         if (!user) {
           throw new Error('Usuario no encontrado');
@@ -540,6 +545,38 @@ No añadas nada más, solamente responde con la excusa.`;
       logger.error('Error al enviar feedback a Discord:', error);
       throw new Error('No se pudo procesar el feedback en este momento');
     }
+  }
+
+  async provideInstructions() {
+    return `¡*hola*! bienvenido a wispen, tu nuevo amigo financiero. aquí te explicamos cómo usarlo de forma fácil y rápida.
+
+_registra tus gastos e ingresos_
+puedes hacerlo de tres formas:
+* **texto**: escribe "gasto 20 en comida" o "ingreso 500 de sueldo".
+* **voz**: envía una nota de voz diciendo lo que gastaste o ingresaste.
+* **foto**: toma una foto del recibo y wispen leerá la información.
+
+_consulta tu estado financiero_
+consulta tu estado financiero
+* pregunta cosas como:
+   * "¿cuánto he gastado este mes?"
+   * "muéstrame mis ingresos de la semana pasada"
+   * "¿cuál es mi balance actual?"
+
+_pide consejos_
+wispen puede darte tips financieros. prueba con:
+* "dame un consejo para ahorrar"
+* "¿cómo puedo reducir mis gastos?"
+* "ayúdame a hacer un presupuesto"
+
+¡*listo*! ahora ya sabes cómo usar wispen. recuerda, estamos aquí para hacer tus finanzas más fáciles y divertidas.
+¡comienza a chatear y mejora tu salud financiera hoy mismo!
+
+_wispen tiene algunos comandos útiles que puedes usar en cualquier momento:_
+* **/feedback**: para enviar tus comentarios o sugerencias sobre wispen.
+* **/notificaciones**: para configurar o ajustar tus preferencias de notificaciones.
+* **/excusometro3000**: para activar el excusómetro 3000 directamente.
+* **/suscripcion**: para ver o modificar los detalles de tu suscripción.`;
   }
 }
 
