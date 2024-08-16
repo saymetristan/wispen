@@ -11,6 +11,7 @@ import { createWriteStream, unlink, createReadStream } from 'fs';
 import { promisify } from 'util';
 import openai from '../config/openai.js';
 import logger from '../utils/logger.js';
+import { sendCSVToWhatsApp } from '../routes/whatsappRoutes.js';
 
 dotenv.config();
 
