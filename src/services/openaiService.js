@@ -12,6 +12,7 @@ import { promisify } from 'util';
 import openai from '../config/openai.js';
 import logger from '../utils/logger.js';
 import { sendCSVToWhatsApp } from '../routes/whatsappRoutes.js';
+import xlsx from 'xlsx';
 
 dotenv.config();
 
@@ -422,11 +423,13 @@ class OpenAIService {
     };
 
     if (descargar) {
-      const csv = this.convertToCSV(reporte.transacciones);
-      const filePath = `/tmp/reporte_${uuidv4()}.csv`;
-      await fs.promises.writeFile(filePath, csv);
+      const wb = xlsx.utils.book_new();
+      const ws = xlsx.utils.json_to_sheet(reporte.transacciones);
+      xlsx.utils.book_append_sheet(wb, ws, 'Transacciones');
+      const filePath = `/tmp/reporte_${uuidv4()}.xlsx`;
+      xlsx.writeFile(wb, filePath);
 
-      // Llamar a la función para enviar el archivo CSV
+      // Llamar a la función para enviar el archivo Excel
       await sendCSVToWhatsApp(`whatsapp:${user.phoneNumber}`, filePath);
 
       return { ...reporte };

@@ -45,7 +45,7 @@ export const sendCSVToWhatsApp = async (phoneNumber, filePath) => {
       Bucket: process.env.AWS_S3_BUCKET_NAME,
       Key: `reports/${Date.now()}_${filePath.split('/').pop()}`,
       Body: fileContent,
-      ContentType: 'text/csv',
+      ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       ACL: 'public-read'
     };
 
@@ -59,7 +59,7 @@ export const sendCSVToWhatsApp = async (phoneNumber, filePath) => {
       to: phoneNumber
     });
 
-    // Enviar el archivo CSV
+    // Enviar el archivo Excel
     await client.messages.create({
       from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
       mediaUrl: [fileUrl],
@@ -73,10 +73,10 @@ export const sendCSVToWhatsApp = async (phoneNumber, filePath) => {
       }
     });
 
-    logger.info(`Reporte CSV enviado a ${phoneNumber}`);
+    logger.info(`Reporte Excel enviado a ${phoneNumber}`);
   } catch (error) {
-    logger.error('Error al enviar el archivo CSV:', error);
-    throw new Error('No se pudo enviar el archivo CSV');
+    logger.error('Error al enviar el archivo Excel:', error);
+    throw new Error('No se pudo enviar el archivo Excel');
   }
 };
 
