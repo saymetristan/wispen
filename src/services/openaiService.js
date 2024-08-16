@@ -11,6 +11,7 @@ import { createWriteStream, unlink, createReadStream } from 'fs';
 import { promisify } from 'util';
 import openai from '../config/openai.js';
 import logger from '../utils/logger.js';
+import client from 'twilio';
 
 dotenv.config();
 
@@ -424,7 +425,28 @@ class OpenAIService {
       const csv = this.convertToCSV(reporte.transacciones);
       const filePath = `/tmp/reporte_${uuidv4()}.csv`;
       await fs.promises.writeFile(filePath, csv);
-      return { ...reporte, csvFilePath: filePath };
+
+      // Enviar el archivo CSV a través de WhatsApp
+      await client.messages.create({
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        body: 'Aquí tienes tu reporte generado:',
+        to: user.phoneNumber
+      });
+
+      await client.messages.create({
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        mediaUrl: [filePath],
+        to: user.phoneNumber
+      });
+
+      // Eliminar el archivo temporal después de enviarlo
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          logger.error('Error al eliminar el archivo temporal:', err);
+        }
+      });
+
+      return { ...reporte};
     }
 
     return reporte;
