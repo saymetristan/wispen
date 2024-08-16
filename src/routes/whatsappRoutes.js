@@ -29,6 +29,37 @@ const getMessageType = (body) => {
   return 'text';
 };
 
+// Nueva función para enviar el archivo CSV a través de WhatsApp
+export const sendCSVToWhatsApp = async (phoneNumber, filePath) => {
+  try {
+    // Enviar un mensaje de texto informando sobre el reporte
+    await client.messages.create({
+      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      body: 'Aquí tienes tu reporte generado:',
+      to: phoneNumber
+    });
+
+    // Enviar el archivo CSV
+    await client.messages.create({
+      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+      mediaUrl: [filePath],
+      to: phoneNumber
+    });
+
+    // Eliminar el archivo temporal después de enviarlo
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        logger.error('Error al eliminar el archivo temporal:', err);
+      }
+    });
+
+    logger.info(`Reporte CSV enviado a ${phoneNumber}`);
+  } catch (error) {
+    logger.error('Error al enviar el archivo CSV:', error);
+    throw new Error('No se pudo enviar el archivo CSV');
+  }
+};
+
 router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook({ validate: false }), userStatusMiddleware, async (req, res) => {
   logger.info('Webhook recibido:', req.body);
   const incomingMsg = req.body.Body;
@@ -134,26 +165,8 @@ atte. el wispen team 🫂🫰`;
       // Es un reporte con CSV
       const csvFilePath = aiResponse.csvFilePath;
       
-      // Enviar un mensaje de texto informando sobre el reporte
-      await client.messages.create({
-        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        body: 'Aquí tienes tu reporte generado:',
-        to: from
-      });
-
       // Enviar el archivo CSV
-      await client.messages.create({
-        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        mediaUrl: [csvFilePath],
-        to: from
-      });
-
-      // Eliminar el archivo temporal después de enviarlo
-      fs.unlink(csvFilePath, (err) => {
-        if (err) {
-          logger.error('Error al eliminar el archivo temporal:', err);
-        }
-      });
+      await sendCSVToWhatsApp(from, csvFilePath);
 
       logger.info(`Reporte CSV enviado a ${from}`);
       res.sendStatus(200);
