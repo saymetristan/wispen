@@ -427,7 +427,7 @@ class OpenAIService {
       await fs.promises.writeFile(filePath, csv);
 
       // Llamar a la función para enviar el archivo CSV
-      await sendCSVToWhatsApp(user.phoneNumber, filePath);
+      await sendCSVToWhatsApp(`whatsapp:${user.phoneNumber}`, filePath);
 
       return { ...reporte };
     }

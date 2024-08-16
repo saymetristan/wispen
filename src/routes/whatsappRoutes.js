@@ -32,18 +32,21 @@ const getMessageType = (body) => {
 // Nueva función para enviar el archivo CSV a través de WhatsApp
 export const sendCSVToWhatsApp = async (phoneNumber, filePath) => {
   try {
+    // Asegurarse de que el número de teléfono esté en el formato correcto
+    const formattedPhoneNumber = phoneNumber.startsWith('whatsapp:') ? phoneNumber : `whatsapp:${phoneNumber}`;
+
     // Enviar un mensaje de texto informando sobre el reporte
     await client.messages.create({
       from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
       body: 'Aquí tienes tu reporte generado:',
-      to: phoneNumber
+      to: formattedPhoneNumber
     });
 
     // Enviar el archivo CSV
     await client.messages.create({
       from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
       mediaUrl: [filePath],
-      to: phoneNumber
+      to: formattedPhoneNumber
     });
 
     // Eliminar el archivo temporal después de enviarlo
@@ -53,7 +56,7 @@ export const sendCSVToWhatsApp = async (phoneNumber, filePath) => {
       }
     });
 
-    logger.info(`Reporte CSV enviado a ${phoneNumber}`);
+    logger.info(`Reporte CSV enviado a ${formattedPhoneNumber}`);
   } catch (error) {
     logger.error('Error al enviar el archivo CSV:', error);
     throw new Error('No se pudo enviar el archivo CSV');
