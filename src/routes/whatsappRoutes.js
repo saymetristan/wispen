@@ -112,8 +112,6 @@ atte. el wispen team 🫂🫰`;
       return;
     }
 
-    const twiml = new twilio.twiml.MessagingResponse();
-
     let aiResponse;
     switch (messageType) {
       case 'audio':
@@ -129,7 +127,23 @@ atte. el wispen team 🫂🫰`;
         throw new Error('Tipo de mensaje no soportado');
     }
 
-    if (typeof aiResponse === 'object' && aiResponse.pdfUrl) {
+    if (typeof aiResponse === 'object' && aiResponse.csvFilePath) {
+      // Es una respuesta con CSV
+      await client.messages.create({
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        body: 'Aquí está tu reporte en formato CSV:',
+        to: from
+      });
+
+      await client.messages.create({
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        mediaUrl: [aiResponse.csvFilePath],
+        to: from
+      });
+
+      logger.info(`CSV enviado a ${from}`);
+      res.sendStatus(200);
+    } else if (typeof aiResponse === 'object' && aiResponse.pdfUrl) {
       // Es una respuesta de seguridad con PDF
       try {
         await client.messages.create({
@@ -150,6 +164,7 @@ atte. el wispen team 🫂🫰`;
         throw new Error('No se pudo enviar el PDF de seguridad');
       }
     } else {
+      const twiml = new twilio.twiml.MessagingResponse();
       twiml.message(aiResponse);
     }
 

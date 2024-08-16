@@ -355,7 +355,7 @@ class OpenAIService {
   }
 
   async generarReporte(userId, args) {
-    const { tipo_periodo, periodo, fecha_inicio, fecha_fin } = args;
+    const { tipo_periodo, periodo, fecha_inicio, fecha_fin, descargar } = args;
     const user = await User.findByPk(userId);
     if (!user) {
       throw new Error('Usuario no encontrado');
@@ -399,7 +399,7 @@ class OpenAIService {
     const ingresos = transactions.filter(t => t.type === 'ingreso').reduce((sum, t) => sum + t.amount, 0);
     const gastos = transactions.filter(t => t.type === 'gasto').reduce((sum, t) => sum + t.amount, 0);
 
-    return {
+    const reporte = {
       periodo: {
         inicio: startDate.toISOString().split('T')[0],
         fin: endDate.toISOString().split('T')[0]
@@ -419,6 +419,22 @@ class OpenAIService {
         fecha: t.createdAt.toISOString().split('T')[0]
       }))
     };
+
+    if (descargar) {
+      const csv = this.convertToCSV(reporte.transacciones);
+      const filePath = `/tmp/reporte_${uuidv4()}.csv`;
+      await fs.promises.writeFile(filePath, csv);
+      return { ...reporte, csvFilePath: filePath };
+    }
+
+    return reporte;
+  }
+
+  convertToCSV(transacciones) {
+    const header = ['ID', 'Tipo', 'Monto', 'Categoría', 'Subcategoría', 'Descripción', 'Fecha'];
+    const rows = transacciones.map(t => [t.id, t.tipo, t.monto, t.categoria, t.subcategoria, t.descripcion, t.fecha]);
+    const csvContent = [header, ...rows].map(e => e.join(",")).join("\n");
+    return csvContent;
   }
 
   async waitForRunCompletion(threadId, runId) {
@@ -565,7 +581,7 @@ No añadas nada más, solamente responde con la excusa.`;
 _registra tus gastos e ingresos_
 puedes hacerlo de tres formas:
 • *texto*: escribe "gasto 20 en comida" o "ingreso 500 de sueldo".
-• *voz*: env��a una nota de voz diciendo lo que gastaste o ingresaste.
+• *voz*: envía una nota de voz diciendo lo que gastaste o ingresaste.
 • *foto*: toma una foto del recibo y wispen leerá la información.
 
 _consulta tu estado financiero_
