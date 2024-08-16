@@ -6,6 +6,7 @@ import User from '../models/User.js';
 import logger from '../utils/logger.js';
 import userStatusMiddleware from '../middleware/userStatusMiddleware.js';
 import fs from 'fs';
+import AWS from 'aws-sdk';
 
 dotenv.config();
 
@@ -29,24 +30,40 @@ const getMessageType = (body) => {
   return 'text';
 };
 
-// Nueva función para enviar el archivo CSV a través de WhatsApp
+// Configurar S3
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION
+});
+
 export const sendCSVToWhatsApp = async (phoneNumber, filePath) => {
   try {
-    // Asegurarse de que el número de teléfono esté en el formato correcto
-    const formattedPhoneNumber = phoneNumber.startsWith('whatsapp:') ? phoneNumber : `whatsapp:${phoneNumber}`;
+    // Subir el archivo a S3
+    const fileContent = await fs.promises.readFile(filePath);
+    const params = {
+      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Key: `reports/${Date.now()}_${filePath.split('/').pop()}`,
+      Body: fileContent,
+      ContentType: 'text/csv',
+      ACL: 'public-read'
+    };
+
+    const data = await s3.upload(params).promise();
+    const fileUrl = data.Location;
 
     // Enviar un mensaje de texto informando sobre el reporte
     await client.messages.create({
       from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
       body: 'Aquí tienes tu reporte generado:',
-      to: formattedPhoneNumber
+      to: phoneNumber
     });
 
     // Enviar el archivo CSV
     await client.messages.create({
       from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-      mediaUrl: [filePath],
-      to: formattedPhoneNumber
+      mediaUrl: [fileUrl],
+      to: phoneNumber
     });
 
     // Eliminar el archivo temporal después de enviarlo
@@ -56,7 +73,7 @@ export const sendCSVToWhatsApp = async (phoneNumber, filePath) => {
       }
     });
 
-    logger.info(`Reporte CSV enviado a ${formattedPhoneNumber}`);
+    logger.info(`Reporte CSV enviado a ${phoneNumber}`);
   } catch (error) {
     logger.error('Error al enviar el archivo CSV:', error);
     throw new Error('No se pudo enviar el archivo CSV');
