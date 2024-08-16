@@ -112,6 +112,8 @@ atte. el wispen team 🫂🫰`;
       return;
     }
 
+    const twiml = new twilio.twiml.MessagingResponse();
+
     let aiResponse;
     switch (messageType) {
       case 'audio':
@@ -164,16 +166,14 @@ atte. el wispen team 🫂🫰`;
         throw new Error('No se pudo enviar el PDF de seguridad');
       }
     } else {
-      const twiml = new twilio.twiml.MessagingResponse();
       twiml.message(aiResponse);
+      res.writeHead(200, {'Content-Type': 'text/xml'});
+      res.end(twiml.toString());
+      logger.info('Respuesta enviada:', twiml.toString());
     }
 
     // Log del assistant_ID y threadId después de procesar el mensaje
     logger.info(`Usuario: ${waId}, Assistant ID: ${user.assistant_ID}, Thread ID: ${user.threadId}`);
-
-    res.writeHead(200, {'Content-Type': 'text/xml'});
-    res.end(twiml.toString());
-    logger.info('Respuesta enviada:', twiml.toString());
   } catch (error) {
     logger.error('Error procesando la solicitud:', error);
     const twiml = new twilio.twiml.MessagingResponse();
@@ -190,8 +190,10 @@ atte. el wispen team 🫂🫰`;
     }
 
     twiml.message(errorMessage);
-    res.writeHead(200, {'Content-Type': 'text/xml'});
-    res.end(twiml.toString());
+    if (!res.headersSent) {
+      res.writeHead(200, {'Content-Type': 'text/xml'});
+      res.end(twiml.toString());
+    }
   }
 });
 
