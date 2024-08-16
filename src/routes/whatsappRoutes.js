@@ -128,7 +128,22 @@ atte. el wispen team 🫂🫰`;
       default:
         throw new Error('Tipo de mensaje no soportado');
     }
-    twiml.message(aiResponse);
+
+    if (typeof aiResponse === 'object' && aiResponse.pdfUrl) {
+      // Es una respuesta de seguridad con PDF
+      await client.messages.create({
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        body: aiResponse.message,
+        to: from
+      });
+      await client.messages.create({
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        mediaUrl: [aiResponse.pdfUrl],
+        to: from
+      });
+    } else {
+      twiml.message(aiResponse);
+    }
 
     // Log del assistant_ID y threadId después de procesar el mensaje
     logger.info(`Usuario: ${waId}, Assistant ID: ${user.assistant_ID}, Thread ID: ${user.threadId}`);

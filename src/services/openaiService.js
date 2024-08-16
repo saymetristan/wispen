@@ -99,6 +99,11 @@ class OpenAIService {
           return this.provideInstructions();
         }
 
+        if (message && message.trim().toLowerCase() === '/seguridad') {
+          logger.info(`Procesando solicitud de seguridad para el usuario ${userId}`);
+          return await this.provideSecurity();
+        }
+
         const user = await User.findByPk(userId);
         if (!user) {
           throw new Error('Usuario no encontrado');
@@ -548,37 +553,49 @@ No añadas nada más, solamente responde con la excusa.`;
   }
 
   async provideInstructions() {
-    const instructions = `aquí te explico cómo interactuar conmigo de forma fácil y rápida.
-  
-  _registra tus gastos e ingresos_
-  puedes hacerlo de tres formas:
-  • *texto*: escribe "gasto 20 en comida" o "ingreso 500 de sueldo".
-  • *voz*: envía una nota de voz diciendo lo que gastaste o ingresaste.
-  • *foto*: toma una foto del recibo, escribe si es gasto o ingreso y wispen leerá la información.
-  
-  _consulta tu estado financiero_
-  • pregunta cosas como:
-     • "¿cuánto he gastado este mes?"
-     • "muéstrame mis ingresos de la semana pasada"
-     • "¿cuál es mi balance actual?"
-  
-  _pide consejos_
-  wispen puede darte tips financieros. prueba con:
-  • "dame un consejo para ahorrar"
-  • "¿cómo puedo reducir mis gastos?"
-  • "ayúdame a hacer un presupuesto"
-  
-  ¡*listo*! ahora ya sabes cómo usar wispen. recuerda, estamos aquí para hacer tus finanzas más fáciles y divertidas.
-  ¡comienza a chatear y mejora tu salud financiera hoy mismo!
-  
-  _wispen tiene algunos comandos útiles que puedes usar en cualquier momento:_
-  • */feedback*: para enviar tus comentarios o sugerencias sobre wispen.
-  • */notificaciones*: para configurar o ajustar tus preferencias de notificaciones.
-  • */excusometro3000*: para activar el excusómetro 3000 directamente.
-  • */suscripcion*: para ver o modificar los detalles de tu suscripción.
-  • */seguridad*: para saber más sobre seguridad y privacidad.`;
+    const instructions = `¡*hola*! bienvenido a wispen, tu nuevo amigo financiero. aquí te explicamos cómo usarlo de forma fácil y rápida.
+
+_registra tus gastos e ingresos_
+puedes hacerlo de tres formas:
+• *texto*: escribe "gasto 20 en comida" o "ingreso 500 de sueldo".
+• *voz*: envía una nota de voz diciendo lo que gastaste o ingresaste.
+• *foto*: toma una foto del recibo y wispen leerá la información.
+
+_consulta tu estado financiero_
+• pregunta cosas como:
+   • "¿cuánto he gastado este mes?"
+   • "muéstrame mis ingresos de la semana pasada"
+   • "¿cuál es mi balance actual?"
+
+_pide consejos_
+wispen puede darte tips financieros. prueba con:
+• "dame un consejo para ahorrar"
+• "¿cómo puedo reducir mis gastos?"
+• "ayúdame a hacer un presupuesto"
+
+¡*listo*! ahora ya sabes cómo usar wispen. recuerda, estamos aquí para hacer tus finanzas más fáciles y divertidas.
+¡comienza a chatear y mejora tu salud financiera hoy mismo!
+
+_wispen tiene algunos comandos útiles que puedes usar en cualquier momento:_
+• */feedback*: para enviar tus comentarios o sugerencias sobre wispen.
+• */notificaciones*: para configurar o ajustar tus preferencias de notificaciones.
+• */excusometro3000*: para activar el excusómetro 3000 directamente.
+• */suscripcion*: para ver o modificar los detalles de tu suscripción.
+• */seguridad*: para saber más sobre seguridad y privacidad.`;
   
     return instructions;
+  }
+
+  async provideSecurity() {
+    const securityMessage = `¡gracias por tu interés en cómo cuidamos tus datos! 🛡️💼
+
+te envío un pequeño manual sobre nuestra seguridad y privacidad. 
+
+recuerda, tus datos están más protegidos que un tesoro pirata, pero mucho más fáciles de acceder (para ti, claro está).`;
+
+    const pdfUrl = 'wispen-files.s3.us-east-2.amazonaws.com/Seguridad%20y%20privacidad%20Wispen.pdf';
+
+    return { message: securityMessage, pdfUrl: pdfUrl };
   }
 }
 
