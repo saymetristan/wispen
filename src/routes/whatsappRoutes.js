@@ -131,16 +131,24 @@ atte. el wispen team 🫂🫰`;
 
     if (typeof aiResponse === 'object' && aiResponse.pdfUrl) {
       // Es una respuesta de seguridad con PDF
-      await client.messages.create({
-        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        body: aiResponse.message,
-        to: from
-      });
-      await client.messages.create({
-        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        mediaUrl: [aiResponse.pdfUrl],
-        to: from
-      });
+      try {
+        await client.messages.create({
+          from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+          body: aiResponse.message,
+          to: from
+        });
+        
+        await client.messages.create({
+          from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+          mediaUrl: [aiResponse.pdfUrl],
+          to: from
+        });
+
+        logger.info(`PDF de seguridad enviado a ${from}`);
+      } catch (error) {
+        logger.error('Error al enviar el PDF de seguridad:', error);
+        throw new Error('No se pudo enviar el PDF de seguridad');
+      }
     } else {
       twiml.message(aiResponse);
     }
@@ -162,6 +170,8 @@ atte. el wispen team 🫂🫰`;
       errorMessage = 'Por favor, envía solo una imagen por mensaje.';
     } else if (error.message === 'Tipo de mensaje no soportado') {
       errorMessage = 'Lo siento, no puedo procesar este tipo de mensaje.';
+    } else if (error.message === 'No se pudo enviar el PDF de seguridad') {
+      errorMessage = 'Lo siento, no se pudo enviar el PDF de seguridad.';
     }
 
     twiml.message(errorMessage);
