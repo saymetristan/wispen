@@ -88,20 +88,27 @@ class OpenAIService {
 
     while (retries < maxRetries) {
       try {
-        // Mover esta verificación al principio de la función y cambiar '\feedback' por '/feedback'
-        if (message && message.trim().toLowerCase().startsWith('/feedback')) {
-          logger.info(`Procesando feedback para el usuario ${userId}: ${message}`);
-          return await this.processFeedback(message.slice(9).trim(), userId);
-        }
+        // Función auxiliar para detectar comandos
+        const detectCommand = (text, command) => {
+          const regex = new RegExp(`\\${command}\\b`, 'i');
+          return regex.test(text);
+        };
 
-        if (message && message.trim().toLowerCase() === '/instrucciones') {
-          logger.info(`Procesando solicitud de instrucciones para el usuario ${userId}`);
-          return this.provideInstructions();
-        }
+        if (message) {
+          if (detectCommand(message, '/feedback')) {
+            logger.info(`Procesando feedback para el usuario ${userId}: ${message}`);
+            return await this.processFeedback(message.replace('/feedback', '').trim(), userId);
+          }
 
-        if (message && message.trim().toLowerCase() === '/seguridad') {
-          logger.info(`Procesando solicitud de seguridad para el usuario ${userId}`);
-          return await this.provideSecurity();
+          if (detectCommand(message, '/instrucciones')) {
+            logger.info(`Procesando solicitud de instrucciones para el usuario ${userId}`);
+            return this.provideInstructions();
+          }
+
+          if (detectCommand(message, '/seguridad')) {
+            logger.info(`Procesando solicitud de seguridad para el usuario ${userId}`);
+            return await this.provideSecurity();
+          }
         }
 
         const user = await User.findByPk(userId);
@@ -558,7 +565,7 @@ No añadas nada más, solamente responde con la excusa.`;
 _registra tus gastos e ingresos_
 puedes hacerlo de tres formas:
 • *texto*: escribe "gasto 20 en comida" o "ingreso 500 de sueldo".
-• *voz*: envía una nota de voz diciendo lo que gastaste o ingresaste.
+• *voz*: env��a una nota de voz diciendo lo que gastaste o ingresaste.
 • *foto*: toma una foto del recibo y wispen leerá la información.
 
 _consulta tu estado financiero_
