@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
 import userStatusMiddleware from '../middleware/userStatusMiddleware.js';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -130,20 +131,31 @@ atte. el wispen team 🫂🫰`;
     }
 
     if (typeof aiResponse === 'object' && aiResponse.csvFilePath) {
-      // Es una respuesta con CSV
+      // Es un reporte con CSV
+      const csvFilePath = aiResponse.csvFilePath;
+      
+      // Enviar un mensaje de texto informando sobre el reporte
       await client.messages.create({
         from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        body: 'Aquí está tu reporte en formato CSV:',
+        body: 'Aquí tienes tu reporte generado:',
         to: from
       });
 
+      // Enviar el archivo CSV
       await client.messages.create({
         from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        mediaUrl: [aiResponse.csvFilePath],
+        mediaUrl: [csvFilePath],
         to: from
       });
 
-      logger.info(`CSV enviado a ${from}`);
+      // Eliminar el archivo temporal después de enviarlo
+      fs.unlink(csvFilePath, (err) => {
+        if (err) {
+          logger.error('Error al eliminar el archivo temporal:', err);
+        }
+      });
+
+      logger.info(`Reporte CSV enviado a ${from}`);
       res.sendStatus(200);
     } else if (typeof aiResponse === 'object' && aiResponse.pdfUrl) {
       // Es una respuesta de seguridad con PDF
