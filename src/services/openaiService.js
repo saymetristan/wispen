@@ -554,7 +554,7 @@ No añadas nada más, solamente responde con la excusa.`;
   puedes hacerlo de tres formas:
   • *texto*: escribe "gasto 20 en comida" o "ingreso 500 de sueldo".
   • *voz*: envía una nota de voz diciendo lo que gastaste o ingresaste.
-  • *foto*: toma una foto del recibo y wispen leerá la información.
+  • *foto*: toma una foto del recibo, escribe si es gasto o ingreso y wispen leerá la información.
   
   _consulta tu estado financiero_
   • pregunta cosas como:
@@ -575,7 +575,8 @@ No añadas nada más, solamente responde con la excusa.`;
   • */feedback*: para enviar tus comentarios o sugerencias sobre wispen.
   • */notificaciones*: para configurar o ajustar tus preferencias de notificaciones.
   • */excusometro3000*: para activar el excusómetro 3000 directamente.
-  • */suscripcion*: para ver o modificar los detalles de tu suscripción.`;
+  • */suscripcion*: para ver o modificar los detalles de tu suscripción.
+  • */seguridad*: para saber más sobre seguridad y privacidad.`;
   
     return instructions;
   }
