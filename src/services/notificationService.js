@@ -1,14 +1,10 @@
 import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import csv from 'csv-parser';
 import schedule from 'node-schedule';
+import axios from 'axios';
 import User from '../models/User.js';
 import WhatsAppService from './whatsappService.js';
 import logger from '../utils/logger.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 class NotificationService {
   constructor() {
@@ -16,17 +12,29 @@ class NotificationService {
     this.loadNotifications();
   }
 
-  loadNotifications() {
-    const filePath = path.join(__dirname, '../utils/notifications.csv');
-    fs.createReadStream(filePath)
-      .pipe(csv())
-      .on('data', (row) => {
-        this.notifications.push(row);
-      })
-      .on('end', () => {
-        logger.info('Notificaciones cargadas correctamente');
-        this.scheduleNotifications();
-      });
+  async loadNotifications() {
+    const url = 'https://wispen-files.s3.us-east-2.amazonaws.com/notifications.csv';
+    try {
+      const response = await axios.get(url);
+      const data = response.data;
+
+      // Guardar el contenido del archivo CSV en un archivo temporal
+      const tempFilePath = '/tmp/notifications.csv';
+      await fs.promises.writeFile(tempFilePath, data);
+
+      // Leer el archivo CSV temporalmente guardado
+      fs.createReadStream(tempFilePath)
+        .pipe(csv())
+        .on('data', (row) => {
+          this.notifications.push(row);
+        })
+        .on('end', () => {
+          logger.info('Notificaciones cargadas correctamente');
+          this.scheduleNotifications();
+        });
+    } catch (error) {
+      logger.error('Error al cargar las notificaciones:', error);
+    }
   }
 
   scheduleNotifications() {
