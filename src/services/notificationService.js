@@ -1,10 +1,14 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import csv from 'csv-parser';
 import schedule from 'node-schedule';
 import User from '../models/User.js';
 import WhatsAppService from './whatsappService.js';
 import logger from '../utils/logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class NotificationService {
   constructor() {
