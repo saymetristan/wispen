@@ -84,6 +84,14 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
   const messageType = getMessageType(req.body);
 
   try {
+    await client.messages(req.body.MessageSid)
+      .update({body: req.body.Body})
+      .then(message => console.log(`Mensaje marcado como leído: ${message.sid}`));
+  } catch (error) {
+    logger.error('Error al marcar el mensaje como leído:', error);
+  }
+
+  try {
     if (!isValidPhoneNumber(from)) {
       throw new Error('Número de teléfono inválido');
     }
