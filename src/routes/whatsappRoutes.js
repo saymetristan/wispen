@@ -52,13 +52,6 @@ export const sendCSVToWhatsApp = async (phoneNumber, filePath) => {
     const data = await s3.upload(params).promise();
     const fileUrl = data.Location;
 
-    // Enviar un mensaje de texto informando sobre el reporte
-    await client.messages.create({
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-      body: 'Aquí tienes tu reporte generado:',
-      to: phoneNumber
-    });
-
     // Enviar el archivo Excel
     await client.messages.create({
       from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
