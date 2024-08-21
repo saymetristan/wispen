@@ -13,6 +13,7 @@ import openai from '../config/openai.js';
 import logger from '../utils/logger.js';
 import { sendCSVToWhatsApp } from '../routes/whatsappRoutes.js';
 import xlsx from 'xlsx';
+import SavingGoal from '../models/savingGoal.js';
 
 dotenv.config();
 
@@ -308,6 +309,12 @@ class OpenAIService {
         case 'creador_excusas':
           functionResult = await this.creadorExcusas(functionArgs);
           break;
+        case 'meta_ahorro':
+          functionResult = await this.crearMetaAhorro(userId, functionArgs);
+          break;
+        case 'mostrar_progreso_meta':
+          functionResult = await this.mostrarProgresoMeta(userId, functionArgs.description);
+          break;
         default:
           throw new Error(`Función no reconocida: ${functionName}`);
       }
@@ -352,6 +359,17 @@ class OpenAIService {
       user.balance = parseFloat(user.balance) - parseFloat(monto);
     }
     await user.save();
+
+    // Actualizar el progreso de las metas de ahorro
+    const savingGoals = await SavingGoal.findAll({ where: { userId } });
+    for (const goal of savingGoals) {
+      if (tipo === 'ingreso') {
+        goal.savedAmount += parseFloat(monto);
+      } else if (tipo === 'gasto') {
+        goal.savedAmount -= parseFloat(monto);
+      }
+      await goal.save();
+    }
 
     return { success: true, transactionId: transaction.id, newBalance: user.balance };
   }
@@ -636,6 +654,49 @@ recuerda, tus datos están más protegidos que un tesoro pirata, pero mucho más
     const pdfUrl = 'https://wispen-files.s3.us-east-2.amazonaws.com/Seguridad%20y%20privacidad%20Wispen.pdf';
 
     return { message: securityMessage, pdfUrl: pdfUrl };
+  }
+
+  async crearMetaAhorro(userId, { amount, description, duration }) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    const targetDate = new Date();
+    targetDate.setMonth(targetDate.getMonth() + parseInt(duration));
+
+    const savingGoal = await SavingGoal.create({
+      userId,
+      amount: parseFloat(amount),
+      description,
+      duration,
+      targetDate
+    });
+
+    return {
+      success: true,
+      message: 'Meta de ahorro creada correctamente',
+      savingGoal
+    };
+  }
+
+  async mostrarProgresoMeta(userId, description) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    const savingGoal = await SavingGoal.findOne({ where: { userId, description } });
+    if (!savingGoal) {
+      throw new Error('Meta de ahorro no encontrada');
+    }
+
+    const progress = (savingGoal.savedAmount / savingGoal.amount) * 100;
+    return {
+      success: true,
+      message: `Has ahorrado ${savingGoal.savedAmount} de tu meta de ${savingGoal.amount} para ${savingGoal.description}. ¡Vas por buen camino!`,
+      progress
+    };
   }
 }
 
