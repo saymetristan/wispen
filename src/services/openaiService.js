@@ -327,7 +327,7 @@ class OpenAIService {
       throw new Error('Usuario no encontrado');
     }
 
-    console.log('Datos de la transacción:', {
+    logger.info('Datos de la transacción:', {
       userId,
       type: tipo,
       amount: monto,
