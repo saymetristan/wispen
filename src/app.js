@@ -24,7 +24,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-sequelize.sync({ alter: true }).then(async () => {
+sequelize.sync().then(async () => {
   console.log('Base de datos conectada y sincronizada');
   await NotificationService.init();
   app.listen(PORT, () => {
