@@ -9,7 +9,17 @@ import logger from '../utils/logger.js';
 class NotificationService {
   constructor() {
     this.notifications = [];
-    this.loadNotifications();
+    this.init();
+  }
+
+  async init() {
+    try {
+      await this.loadNotifications();
+      this.scheduleNotifications();
+      logger.info('Servicio de notificaciones inicializado correctamente');
+    } catch (error) {
+      logger.error('Error al inicializar el servicio de notificaciones:', error);
+    }
   }
 
   async loadNotifications() {
@@ -18,35 +28,42 @@ class NotificationService {
       const response = await axios.get(url);
       const data = response.data;
 
-      // Guardar el contenido del archivo CSV en un archivo temporal
-      const tempFilePath = '/tmp/notifications.csv';
-      await fs.promises.writeFile(tempFilePath, data);
+      return new Promise((resolve, reject) => {
+        const results = [];
+        const parser = csv()
+          .on('data', (data) => results.push(data))
+          .on('end', () => {
+            this.notifications = results;
+            logger.info(`${this.notifications.length} notificaciones cargadas correctamente`);
+            resolve();
+          })
+          .on('error', (error) => {
+            logger.error('Error al parsear el CSV:', error);
+            reject(error);
+          });
 
-      // Leer el archivo CSV temporalmente guardado
-      fs.createReadStream(tempFilePath)
-        .pipe(csv())
-        .on('data', (row) => {
-          this.notifications.push(row);
-        })
-        .on('end', () => {
-          logger.info('Notificaciones cargadas correctamente');
-          this.scheduleNotifications();
-        });
+        parser.write(data);
+        parser.end();
+      });
     } catch (error) {
       logger.error('Error al cargar las notificaciones:', error);
+      throw error;
     }
   }
 
   scheduleNotifications() {
-    this.notifications.forEach((notification) => {
+    this.notifications.forEach((notification, index) => {
       const { día, hora, ...alternativas } = notification;
       const time = hora.split(':');
       const dayOfWeek = this.getDayOfWeek(día);
 
-      schedule.scheduleJob({ hour: time[0], minute: time[1], dayOfWeek }, async () => {
+      const job = schedule.scheduleJob({ hour: time[0], minute: time[1], dayOfWeek }, async () => {
         const message = this.getRandomMessage(alternativas);
         await this.sendNotifications(message);
+        logger.info(`Notificación #${index + 1} enviada: ${message}`);
       });
+
+      logger.info(`Notificación #${index + 1} programada para ${día} a las ${hora}`);
     });
   }
 

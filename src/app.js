@@ -24,11 +24,11 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-sequelize.sync().then(() => {
+sequelize.sync().then(async () => {
   console.log('Base de datos conectada y sincronizada');
+  await NotificationService.init();
   app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
-    NotificationService; // Inicializar el servicio de notificaciones
   });
 }).catch((error) => {
   console.error('Error al sincronizar la base de datos:', error);
