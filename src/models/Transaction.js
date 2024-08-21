@@ -28,6 +28,10 @@ const Transaction = sequelize.define('Transaction', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  subcategory: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   description: {
     type: DataTypes.TEXT
   },
