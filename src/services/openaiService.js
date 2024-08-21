@@ -313,7 +313,7 @@ class OpenAIService {
           functionResult = await this.crearMetaAhorro(userId, functionArgs);
           break;
         case 'mostrar_progreso_meta':
-          functionResult = await this.mostrarProgresoMeta(userId, functionArgs.description);
+          functionResult = await this.mostrarProgresoMeta(userId);
           break;
         default:
           throw new Error(`Función no reconocida: ${functionName}`);
@@ -680,22 +680,31 @@ recuerda, tus datos están más protegidos que un tesoro pirata, pero mucho más
     };
   }
 
-  async mostrarProgresoMeta(userId, description) {
+  async mostrarProgresoMeta(userId) {
     const user = await User.findByPk(userId);
     if (!user) {
       throw new Error('Usuario no encontrado');
     }
 
-    const savingGoal = await SavingGoal.findOne({ where: { userId, description } });
-    if (!savingGoal) {
-      throw new Error('Meta de ahorro no encontrada');
+    const savingGoals = await SavingGoal.findAll({ where: { userId } });
+    if (savingGoals.length === 0) {
+      throw new Error('No se encontraron metas de ahorro para este usuario');
     }
 
-    const progress = (savingGoal.savedAmount / savingGoal.amount) * 100;
+    const progressList = savingGoals.map(goal => {
+      const progress = (goal.savedAmount / goal.amount) * 100;
+      return {
+        description: goal.description,
+        savedAmount: goal.savedAmount,
+        targetAmount: goal.amount,
+        progress: progress.toFixed(2) // Formatear a dos decimales
+      };
+    });
+
     return {
       success: true,
-      message: `Has ahorrado ${savingGoal.savedAmount} de tu meta de ${savingGoal.amount} para ${savingGoal.description}. ¡Vas por buen camino!`,
-      progress
+      message: 'Progreso de las metas de ahorro obtenido correctamente',
+      progressList
     };
   }
 }

@@ -85,7 +85,7 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
 
   try {
     await client.messages(req.body.MessageSid)
-      .update({body: req.body.Body})
+      .update({ body: '' }) // Enviar un cuerpo vacío
       .then(message => console.log(`Mensaje marcado como leído: ${message.sid}`));
   } catch (error) {
     logger.error('Error al marcar el mensaje como leído:', error);
