@@ -441,7 +441,7 @@ class OpenAIService {
       // Llamar a la función para enviar el archivo Excel
       await sendCSVToWhatsApp(`whatsapp:${user.phoneNumber}`, filePath);
 
-      return { ...reporte };
+      return {"success": true};
     }
 
     return reporte;
