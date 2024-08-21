@@ -85,7 +85,7 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
 
   try {
     await client.messages(req.body.MessageSid)
-      .update({ body: '' }) // Enviar un cuerpo vacío
+      .update({ status: 'read' }) // Cambiar el estado a 'read'
       .then(message => console.log(`Mensaje marcado como leído: ${message.sid}`));
   } catch (error) {
     logger.error('Error al marcar el mensaje como leído:', error);
@@ -112,7 +112,7 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
 
       // Enviar mensajes de bienvenida
       const twiml = new twilio.twiml.MessagingResponse();
-      twiml.message(`¡hola, humano con billetera! 👋💸 soy wispen, tu nuevo gurú financiero de bolsillo. estoy aquí para transformar tu caos monetario en una sinfonía de centavos:
+      twiml.message(`¡hola, humano con billetera! 👋💸 soy wispen, tu nuevo gurú financiero de bolsillo. estoy aquí para transformar tu caos monetario en una sinfon��a de centavos:
 
 📝 cuéntame tus gastos e ingresos: mensaje, nota de voz o foto de tus recibos 
 📊 pídeme reportes financieros
