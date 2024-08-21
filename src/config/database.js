@@ -13,7 +13,7 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
       rejectUnauthorized: false
     }
   },
-  logging: logger.info// Habilitar logging
+  logging: (msg) => logger.info(msg) // Usar Winston para el logging
 });
 
 export default sequelize;
