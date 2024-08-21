@@ -327,6 +327,15 @@ class OpenAIService {
       throw new Error('Usuario no encontrado');
     }
 
+    console.log('Datos de la transacción:', {
+      userId,
+      type: tipo,
+      amount: monto,
+      description: descripcion,
+      category: categoria,
+      subcategory: subcategoria
+    });
+
     const transaction = await Transaction.create({
       userId,
       type: tipo,
