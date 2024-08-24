@@ -14,6 +14,7 @@ import logger from '../utils/logger.js';
 import { sendCSVToWhatsApp } from '../routes/whatsappRoutes.js';
 import xlsx from 'xlsx';
 import SavingGoal from '../models/savingGoal.js';
+import SpendingLimit from '../models/SpendingLimit.js';
 
 dotenv.config();
 
@@ -315,6 +316,12 @@ class OpenAIService {
         case 'mostrar_progreso_meta':
           functionResult = await this.mostrarProgresoMeta(userId);
           break;
+        case 'crear_limite_gasto':
+          functionResult = await this.crearLimiteGasto(userId, functionArgs);
+          break;
+        case 'mostrar_progreso_limite':
+          functionResult = await this.mostrarProgresoLimite(userId, functionArgs.period, functionArgs.category);
+          break;
         default:
           throw new Error(`Función no reconocida: ${functionName}`);
       }
@@ -369,6 +376,39 @@ class OpenAIService {
         goal.savedAmount -= parseFloat(monto);
       }
       await goal.save();
+    }
+
+    // Monitorear los límites de gasto
+    const spendingLimits = await SpendingLimit.findAll({ where: { userId } });
+    for (const limit of spendingLimits) {
+      if (limit.category && limit.category !== categoria) {
+        continue;
+      }
+
+      if (limit.period === 'mensual' && new Date() > new Date(limit.startDate).setMonth(new Date(limit.startDate).getMonth() + 1)) {
+        continue;
+      }
+
+      if (limit.period === 'semanal' && new Date() > new Date(limit.startDate).setDate(new Date(limit.startDate).getDate() + 7)) {
+        continue;
+      }
+
+      if (limit.period === 'anual' && new Date() > new Date(limit.startDate).setFullYear(new Date(limit.startDate).getFullYear() + 1)) {
+        continue;
+      }
+
+      if (limit.period === 'especifico' && (new Date() < new Date(limit.startDate) || new Date() > new Date(limit.endDate))) {
+        continue;
+      }
+
+      limit.spentAmount += parseFloat(monto);
+      await limit.save();
+
+      if (limit.spentAmount >= limit.amount * 0.8 && limit.spentAmount < limit.amount) {
+        await this.enviarAlerta(userId, `Has gastado ${limit.spentAmount} de tu límite de ${limit.amount} para ${limit.period}. Te quedan ${limit.amount - limit.spentAmount} para el resto del período.`);
+      } else if (limit.spentAmount >= limit.amount) {
+        await this.enviarAlerta(userId, `Has superado tu límite de ${limit.amount} para ${limit.period}. Considera ajustar tus gastos para el resto del período.`);
+      }
     }
 
     return { success: true, transactionId: transaction.id, newBalance: user.balance };
@@ -686,26 +726,72 @@ recuerda, tus datos están más protegidos que un tesoro pirata, pero mucho más
       throw new Error('Usuario no encontrado');
     }
 
-    const savingGoals = await SavingGoal.findAll({ where: { userId } });
-    if (savingGoals.length === 0) {
-      throw new Error('No se encontraron metas de ahorro para este usuario');
+    const savingGoal = await SavingGoal.findOne({ where: { userId, description } });
+    if (!savingGoal) {
+      throw new Error('Meta de ahorro no encontrada');
     }
 
-    const progressList = savingGoals.map(goal => {
-      const progress = (goal.savedAmount / goal.amount) * 100;
-      return {
-        description: goal.description,
-        savedAmount: goal.savedAmount,
-        targetAmount: goal.amount,
-        progress: progress.toFixed(2) // Formatear a dos decimales
-      };
+    const progress = (savingGoal.savedAmount / savingGoal.amount) * 100;
+    return {
+      success: true,
+      message: `Has ahorrado ${savingGoal.savedAmount} de tu meta de ${savingGoal.amount} para ${savingGoal.description}. ¡Vas por buen camino!`,
+      progress
+    };
+  }
+
+  async crearLimiteGasto(userId, { amount, category, period, startDate, endDate }) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    const spendingLimit = await SpendingLimit.create({
+      userId,
+      amount: parseFloat(amount),
+      category,
+      period,
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null
     });
 
     return {
       success: true,
-      message: 'Progreso de las metas de ahorro obtenido correctamente',
-      progressList
+      message: 'Límite de gasto creado correctamente',
+      spendingLimit
     };
+  }
+
+  async mostrarProgresoLimite(userId, period, category = null) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    const whereClause = { userId, period };
+    if (category) {
+      whereClause.category = category;
+    }
+
+    const spendingLimit = await SpendingLimit.findOne({ where: whereClause });
+    if (!spendingLimit) {
+      throw new Error('Límite de gasto no encontrado');
+    }
+
+    const progress = (spendingLimit.spentAmount / spendingLimit.amount) * 100;
+    return {
+      success: true,
+      message: `Has gastado ${spendingLimit.spentAmount} de tu límite de ${spendingLimit.amount} para ${spendingLimit.period}${category ? ` en la categoría ${category}` : ''}. ¡Vas por buen camino!`,
+      progress
+    };
+  }
+
+  async enviarAlerta(userId, mensaje) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    await WhatsAppService.sendMessage(user.phoneNumber, mensaje);
   }
 }
 
