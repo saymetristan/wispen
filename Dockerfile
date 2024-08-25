@@ -1,6 +1,9 @@
 # Usa una imagen base de Node.js
 FROM node:20
 
+# Instala ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg
+
 # Establece el directorio de trabajo en el contenedor
 WORKDIR /app
 
