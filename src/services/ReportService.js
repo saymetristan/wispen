@@ -9,22 +9,31 @@ class ReportService {
   async generarReporte(userId, { startDate, endDate, descargar }) {
     const user = await UserService.findUserById(userId);
 
+    // Asegurarse de que las fechas sean objetos Date válidos
+    const inicio = new Date(startDate);
+    const fin = new Date(endDate);
+
+    // Verificar si las fechas son válidas
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+      throw new Error('Fechas de inicio o fin inválidas');
+    }
+
     const transactions = await Transaction.findAll({
       where: {
         userId,
         createdAt: {
-          [Op.between]: [new Date(startDate), new Date(endDate)]
+          [Op.between]: [inicio, fin]
         }
       }
     });
 
-    const ingresos = transactions.filter(t => t.type === 'ingreso').reduce((sum, t) => sum + t.amount, 0);
-    const gastos = transactions.filter(t => t.type === 'gasto').reduce((sum, t) => sum + t.amount, 0);
+    const ingresos = transactions.filter(t => t.type === 'ingreso').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const gastos = transactions.filter(t => t.type === 'gasto').reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
     const reporte = {
       periodo: {
-        inicio: startDate,
-        fin: endDate
+        inicio: inicio.toISOString(),
+        fin: fin.toISOString()
       },
       resumen: {
         ingresos,
@@ -34,11 +43,11 @@ class ReportService {
       transacciones: transactions.map(t => ({
         id: t.id,
         tipo: t.type,
-        monto: t.amount,
+        monto: parseFloat(t.amount),
         categoria: t.category,
         subcategoria: t.subcategory,
         descripcion: t.description,
-        fecha: t.createdAt
+        fecha: t.createdAt.toISOString()
       }))
     };
 
