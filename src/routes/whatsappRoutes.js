@@ -7,6 +7,7 @@ import logger from '../utils/logger.js';
 import userStatusMiddleware from '../middleware/userStatusMiddleware.js';
 import WhatsAppService from '../services/whatsappService.js';
 import S3Service from '../services/S3Service.js';
+import VoiceService from '../services/VoiceService.js';
 
 dotenv.config();
 
@@ -129,7 +130,7 @@ atte. el wispen team 🫂🫰`;
     let aiResponse;
     switch (messageType) {
       case 'audio':
-        aiResponse = await OpenAIService.processVoiceMessage(mediaUrl, waId);
+        aiResponse = await VoiceService.processVoiceMessage(mediaUrl, waId);
         break;
       case 'image':
         aiResponse = await OpenAIService.processMessage(incomingMsg, waId, mediaUrl);
