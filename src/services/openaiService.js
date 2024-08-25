@@ -14,6 +14,7 @@ import CommandDetectionService from './CommandDetectionService.js';
 import MessageProcessingService from './MessageProcessingService.js';
 import AssistantService from './AssistantService.js';
 import logger from '../utils/logger.js';
+import openai from '../config/openai.js'; // Added this line to import openai
 
 dotenv.config();
 
