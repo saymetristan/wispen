@@ -14,7 +14,8 @@ import CommandDetectionService from './CommandDetectionService.js';
 import MessageProcessingService from './MessageProcessingService.js';
 import AssistantService from './AssistantService.js';
 import logger from '../utils/logger.js';
-import openai from '../config/openai.js'; // Added this line to import openai
+import openai from '../config/openai.js';
+import DateService from './DateService.js';
 
 dotenv.config();
 
@@ -122,6 +123,9 @@ class OpenAIService {
           break;
         case 'mostrar_progreso_limite':
           functionResult = await SpendingLimitService.mostrarProgresoLimite(userId, functionArgs.period, functionArgs.category);
+          break;
+        case 'fecha_actual':
+          functionResult = { currentDate: DateService.getCurrentDate() };
           break;
         default:
           throw new Error(`Función no reconocida: ${functionName}`);
