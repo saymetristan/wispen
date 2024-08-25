@@ -8,7 +8,6 @@ import sequelize from './config/database.js';
 import User from './models/User.js';
 import Transaction from './models/Transaction.js';
 import dotenv from 'dotenv';
-import NotificationService from './services/notificationService.js'; // Importar el servicio de notificaciones
 
 dotenv.config();
 
