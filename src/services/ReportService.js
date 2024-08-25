@@ -15,7 +15,8 @@ class ReportService {
 
     // Verificar si las fechas son válidas
     if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
-      throw new Error('Fechas de inicio o fin inválidas');
+      logger.error(`Fechas inválidas: inicio = ${startDate}, fin = ${endDate}`);
+      throw new Error(`Fechas de inicio o fin inválidas: inicio = ${startDate}, fin = ${endDate}`);
     }
 
     const transactions = await Transaction.findAll({

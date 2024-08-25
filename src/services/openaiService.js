@@ -15,7 +15,7 @@ import MessageProcessingService from './MessageProcessingService.js';
 import AssistantService from './AssistantService.js';
 import logger from '../utils/logger.js';
 import openai from '../config/openai.js';
-import DateService from './DateService.js'; // This line was changed based on the instructions
+import DateService from './DateService.js';
 
 dotenv.config();
 
@@ -101,7 +101,11 @@ class OpenAIService {
           break;
         case 'generar_reporte':
           logger.info(`Generando reporte para usuario ${userId} con parámetros:`, functionArgs);
-          functionResult = await ReportService.generarReporte(userId, functionArgs);
+          functionResult = await ReportService.generarReporte(userId, {
+            startDate: functionArgs.fecha_inicio,
+            endDate: functionArgs.fecha_fin,
+            descargar: functionArgs.descargar
+          });
           break;
         case 'actualizar_perfil_usuario':
           functionResult = await UserService.actualizarUsuario(userId, functionArgs);
