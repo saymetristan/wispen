@@ -163,6 +163,21 @@ class OpenAIService {
           }
         );
 
+        // Añadir mensaje de sistema con la fecha actual
+        const currentDate = new Date().toISOString();
+        await openai.beta.threads.messages.create(
+          threadId,
+          {
+            role: "system",
+            content: [
+              {
+                type: "text",
+                text: `Fecha actual: ${currentDate}`
+              }
+            ]
+          }
+        );
+
         // Ejecutar el assistant en el thread
         let run = await openai.beta.threads.runs.create(
           threadId,
