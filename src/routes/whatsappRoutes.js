@@ -5,8 +5,8 @@ import dotenv from 'dotenv';
 import User from '../models/User.js';
 import logger from '../utils/logger.js';
 import userStatusMiddleware from '../middleware/userStatusMiddleware.js';
-import fs from 'fs';
-import AWS from 'aws-sdk';
+import WhatsAppService from '../services/whatsappService.js';
+import S3Service from '../services/S3Service.js';
 
 dotenv.config();
 
@@ -18,7 +18,6 @@ const client = twilio(accountSid, twilioAuthToken);
 
 // Función para validar el número de teléfono
 const isValidPhoneNumber = (phoneNumber) => {
-  // Implementa la lógica de validación según tus necesidades
   return phoneNumber && phoneNumber.startsWith('whatsapp:+');
 };
 
@@ -30,41 +29,13 @@ const getMessageType = (body) => {
   return 'text';
 };
 
-// Configurar S3
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION
-});
-
 export const sendCSVToWhatsApp = async (phoneNumber, filePath) => {
   try {
-    // Subir el archivo a S3
-    const fileContent = await fs.promises.readFile(filePath);
-    const params = {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
-      Key: `reports/${Date.now()}_${filePath.split('/').pop()}`,
-      Body: fileContent,
-      ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      ACL: 'public-read'
-    };
+    const fileUrl = await S3Service.uploadFile(filePath);
 
-    const data = await s3.upload(params).promise();
-    const fileUrl = data.Location;
+    await WhatsAppService.sendMessage(phoneNumber, '', [fileUrl]);
 
-    // Enviar el archivo Excel
-    await client.messages.create({
-      from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-      mediaUrl: [fileUrl],
-      to: phoneNumber
-    });
-
-    // Eliminar el archivo temporal después de enviarlo
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        logger.error('Error al eliminar el archivo temporal:', err);
-      }
-    });
+    await S3Service.deleteFile(filePath);
 
     logger.info(`Reporte Excel enviado a ${phoneNumber}`);
   } catch (error) {
@@ -85,7 +56,7 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
 
   try {
     await client.messages(req.body.MessageSid)
-      .update({ status: 'read' }) // Cambiar el estado a 'read'
+      .update({ status: 'read' })
       .then(message => console.log(`Mensaje marcado como leído: ${message.sid}`));
   } catch (error) {
     logger.error('Error al marcar el mensaje como leído:', error);
@@ -110,9 +81,8 @@ router.post('/webhook', express.urlencoded({ extended: false }), twilio.webhook(
         isOnboarding: true
       });
 
-      // Enviar mensajes de bienvenida
       const twiml = new twilio.twiml.MessagingResponse();
-      twiml.message(`¡hola, humano con billetera! 👋💸 soy wispen, tu nuevo gurú financiero de bolsillo. estoy aquí para transformar tu caos monetario en una sinfon��a de centavos:
+      twiml.message(`¡hola, humano con billetera! 👋💸 soy wispen, tu nuevo gurú financiero de bolsillo. estoy aquí para transformar tu caos monetario en una sinfonía de centavos:
 
 📝 cuéntame tus gastos e ingresos: mensaje, nota de voz o foto de tus recibos 
 📊 pídeme reportes financieros
@@ -122,7 +92,6 @@ dame un momento para crear tu perfil de superhéroe financiero. ¡es más rápid
       res.writeHead(200, {'Content-Type': 'text/xml'});
       res.end(twiml.toString());
 
-      // Esperar 40 segundos antes de enviar el segundo mensaje
       setTimeout(async () => {
         const mensaje2 = `¡boom! tu perfil está listo y enlazado a tu número : *${from.replace('whatsapp:', '')}*.
 
@@ -136,13 +105,8 @@ recuerda, puedes hablarme, mandarme notas de voz (serenatas financieras bienveni
 
 tip: ponle 📌 a nuestra conversación. así me tendrás siempre a la mano 😉`;
 
-        await client.messages.create({
-          from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-          body: mensaje2,
-          to: from
-        });
+        await WhatsAppService.sendMessage(from.replace('whatsapp:', ''), mensaje2);
 
-        // Enviar el tercer mensaje
         const mensaje3 = `🤘💰 gracias por subirte a esta montaña rusa llamada wispen. por tu confianza en nosotros, todas las funciones que ves ahora serán tuyas, gratis, por siempre jamás.
 
 si en el futuro agregamos funciones premium (ya sabes, para mantener a nuestros hamsters generadores de ia bien alimentados), te lo haremos saber.
@@ -151,13 +115,8 @@ pero por ahora, disfruta de tu pase vip al mundo de las finanzas inteligentes. �
 
 atte. el wispen team 🫂🫰`;
 
-        await client.messages.create({
-          from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-          body: mensaje3,
-          to: from
-        });
+        await WhatsAppService.sendMessage(from.replace('whatsapp:', ''), mensaje3);
 
-        // Marcar el onboarding como completado
         user.isOnboarding = false;
         await user.save();
       }, 40000);
@@ -183,29 +142,14 @@ atte. el wispen team 🫂🫰`;
     }
 
     if (typeof aiResponse === 'object' && aiResponse.csvFilePath) {
-      // Es un reporte con CSV
       const csvFilePath = aiResponse.csvFilePath;
-      
-      // Enviar el archivo CSV
       await sendCSVToWhatsApp(from, csvFilePath);
-
       logger.info(`Reporte CSV enviado a ${from}`);
       res.sendStatus(200);
     } else if (typeof aiResponse === 'object' && aiResponse.pdfUrl) {
-      // Es una respuesta de seguridad con PDF
       try {
-        await client.messages.create({
-          from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-          body: aiResponse.message,
-          to: from
-        });
-        
-        await client.messages.create({
-          from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-          mediaUrl: [aiResponse.pdfUrl],
-          to: from
-        });
-
+        await WhatsAppService.sendMessage(from.replace('whatsapp:', ''), aiResponse.message);
+        await WhatsAppService.sendMessage(from.replace('whatsapp:', ''), '', [aiResponse.pdfUrl]);
         logger.info(`PDF de seguridad enviado a ${from}`);
       } catch (error) {
         logger.error('Error al enviar el PDF de seguridad:', error);
@@ -218,7 +162,6 @@ atte. el wispen team 🫂🫰`;
       logger.info('Respuesta enviada:', twiml.toString());
     }
 
-    // Log del assistant_ID y threadId después de procesar el mensaje
     logger.info(`Usuario: ${waId}, Assistant ID: ${user.assistant_ID}, Thread ID: ${user.threadId}`);
   } catch (error) {
     logger.error('Error procesando la solicitud:', error);
