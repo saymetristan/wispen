@@ -7,17 +7,11 @@ Wispen es un asistente financiero inteligente que opera a través de WhatsApp, d
 ## Características Principales
 
 1. **Registro de Transacciones**: Los usuarios pueden registrar fácilmente sus gastos e ingresos enviando mensajes de texto, notas de voz o imágenes de recibos.
-
 2. **Procesamiento de Lenguaje Natural**: Wispen utiliza avanzados modelos de IA para interpretar y procesar las solicitudes de los usuarios en lenguaje natural.
-
 3. **Análisis de Imágenes**: Capacidad para extraer información financiera relevante de imágenes de recibos o facturas.
-
 4. **Informes Financieros**: Generación de reportes detallados sobre el estado financiero del usuario, incluyendo balances, gastos por categoría y tendencias de ahorro.
-
 5. **Consejos Personalizados**: Ofrece recomendaciones financieras basadas en los patrones de gasto y los objetivos del usuario.
-
 6. **Múltiples Formatos de Entrada**: Acepta interacciones a través de texto, audio y imágenes para mayor flexibilidad.
-
 7. **Perfil de Usuario Personalizado**: Mantiene un perfil detallado de cada usuario, incluyendo información como ocupación, ingresos mensuales y objetivos de ahorro.
 
 ## Arquitectura Técnica
@@ -65,10 +59,41 @@ Registra todas las transacciones financieras del usuario:
 - Categoría
 - Descripción
 
+#### Meta de Ahorro (SavingGoal)
+Registra las metas de ahorro del usuario:
+- Monto
+- Descripción
+- Duración
+- Cantidad ahorrada
+- Fecha objetivo
+
+#### Límite de Gasto (SpendingLimit)
+Registra los límites de gasto del usuario:
+- Monto
+- Categoría
+- Periodo
+- Fecha de inicio y fin
+- Cantidad gastada
+
 ### 4. Servicios Adicionales
 
 - `WhatsAppService`: Maneja el envío de mensajes a través de la API de Twilio.
 - `userStatusMiddleware`: Middleware para rastrear y registrar el estado del usuario en cada interacción.
+- `InstructionService`: Proporciona instrucciones sobre cómo usar Wispen.
+- `ExcuseService`: Genera excusas creativas para justificar gastos.
+- `SecurityService`: Proporciona información sobre seguridad y privacidad.
+- `RunService`: Maneja la espera y finalización de ejecuciones de OpenAI.
+- `AssistantService`: Gestiona la creación y finalización de ejecuciones de OpenAI.
+- `SavingGoalService`: Gestiona la creación y seguimiento de metas de ahorro.
+- `SpendingLimitService`: Gestiona la creación y seguimiento de límites de gasto.
+- `MessageProcessingService`: Procesa el contenido de los mensajes.
+- `ReportService`: Genera reportes financieros.
+- `CSVService`: Convierte datos a formato CSV.
+- `S3Service`: Maneja la subida y eliminación de archivos en S3.
+- `TransactionService`: Gestiona el registro y consulta de transacciones.
+- `NotificationService`: Envía alertas a los usuarios.
+- `UserService`: Gestiona la información del usuario.
+- `VoiceService`: Procesa notas de voz.
 
 ## Flujo de Trabajo
 
