@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import xlsx from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
 import { sendCSVToWhatsApp } from '../routes/whatsappRoutes.js';
