@@ -168,7 +168,7 @@ class OpenAIService {
         await openai.beta.threads.messages.create(
           threadId,
           {
-            role: "system",
+            role: "assistant",
             content: [
               {
                 type: "text",
