@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { sendCSVToWhatsApp } from '../routes/whatsappRoutes.js';
 import UserService from './UserService.js';
 import Transaction from '../models/Transaction.js';
+import logger from '../utils/logger.js'; // Agregar esta línea
 
 class ReportService {
   async generarReporte(userId, { startDate, endDate, descargar }) {
