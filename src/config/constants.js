@@ -1,0 +1,1 @@
+export const THREAD_EXPIRY_DAYS = 30;
