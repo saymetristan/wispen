@@ -19,7 +19,8 @@ const client = twilio(accountSid, twilioAuthToken);
 
 // Función para validar el número de teléfono
 const isValidPhoneNumber = (phoneNumber) => {
-  return phoneNumber && phoneNumber.startsWith('whatsapp:+');
+  const phoneRegex = /^whatsapp:\+\d{1,15}$/;
+  return phoneRegex.test(phoneNumber);
 };
 
 // Función para determinar el tipo de mensaje
