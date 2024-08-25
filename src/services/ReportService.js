@@ -59,7 +59,7 @@ class ReportService {
       const filePath = `/tmp/reporte_${uuidv4()}.xlsx`;
       xlsx.writeFile(wb, filePath);
 
-      await sendCSVToWhatsApp(`whatsapp:${user.phoneNumber}`, filePath);
+      await sendCSVToWhatsApp(`${user.phoneNumber}`, filePath);
 
       return { success: true };
     }
