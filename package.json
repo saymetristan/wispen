@@ -30,7 +30,8 @@
     "twilio": "^5.2.2",
     "uuid": "^10.0.0",
     "winston": "^3.13.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "date-fns": "^2.29.3"
   },
   "devDependencies": {
     "sequelize-cli": "^6.6.2"
