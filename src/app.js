@@ -8,7 +8,7 @@ import sequelize from './config/database.js';
 import User from './models/User.js';
 import Transaction from './models/Transaction.js';
 import dotenv from 'dotenv';
-
+import notificationService from './services/notificationService.js';
 
 dotenv.config();
 
@@ -28,6 +28,7 @@ sequelize.sync().then(async () => {
   console.log('Base de datos conectada y sincronizada');
   app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
+    notificationService.init();
   });
 }).catch((error) => {
   console.error('Error al sincronizar la base de datos:', error);
