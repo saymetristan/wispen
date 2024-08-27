@@ -34,14 +34,29 @@ class NotificationService {
     logger.info('Iniciando programación de notificaciones');
     const users = await User.findAll();
     logger.info(`Usuarios encontrados: ${users.length}`);
+    
+    const now = new Date();
+    const currentDay = now.getDay();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+
     this.notifications.forEach((notification) => {
-      const [hour, minute] = notification.hora.split(':');
+      const [hour, minute] = notification.hora.split(':').map(Number);
       const dayOfWeek = this.getDayOfWeek(notification.día);
+      
       logger.info(`Programando notificación para ${notification.día} a las ${hour}:${minute}`);
+      
+      if (dayOfWeek === currentDay && (hour > currentHour || (hour === currentHour && minute > currentMinute))) {
+        // Crear notificaciones para hoy si la hora aún no ha pasado
+        users.forEach(user => this.createNotification(user.id, notification));
+      }
+      
+      // Programar para futuros días
       schedule.scheduleJob(`${minute} ${hour} * * ${dayOfWeek}`, () => {
         users.forEach(user => this.createNotification(user.id, notification));
       });
     });
+    
     logger.info('Notificaciones programadas');
   }
 
@@ -124,6 +139,7 @@ class NotificationService {
     this.loadNotifications();
     this.scheduleNotifications();
     this.startNotificationQueue();
+    this.handleSpecialNotifications();
     logger.info('Servicio de notificaciones iniciado');
   }
 
