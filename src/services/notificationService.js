@@ -15,36 +15,50 @@ class NotificationService {
   }
 
   loadNotifications() {
+    logger.info('Iniciando carga de notificaciones');
     const results = [];
     fs.createReadStream(path.join(process.cwd(), 'src', 'utils', 'notifications.csv'))
       .pipe(csv())
       .on('data', (data) => results.push(data))
       .on('end', () => {
         this.notifications = results;
+        logger.info(`Notificaciones cargadas: ${results.length}`);
         this.scheduleNotifications();
+      })
+      .on('error', (error) => {
+        logger.error('Error al cargar notificaciones:', error);
       });
   }
 
   async scheduleNotifications() {
+    logger.info('Iniciando programación de notificaciones');
     const users = await User.findAll();
+    logger.info(`Usuarios encontrados: ${users.length}`);
     this.notifications.forEach((notification) => {
       const [hour, minute] = notification.hora.split(':');
       const dayOfWeek = this.getDayOfWeek(notification.día);
-
+      logger.info(`Programando notificación para ${notification.día} a las ${hour}:${minute}`);
       schedule.scheduleJob(`${minute} ${hour} * * ${dayOfWeek}`, () => {
         users.forEach(user => this.createNotification(user.id, notification));
       });
     });
+    logger.info('Notificaciones programadas');
   }
 
   async createNotification(userId, notification) {
+    logger.info(`Creando notificación para usuario ${userId}`);
     const message = this.getRandomMessage(notification);
-    await Notification.create({
-      userId,
-      message,
-      scheduledFor: new Date(),
-      sent: false
-    });
+    try {
+      const createdNotification = await Notification.create({
+        userId,
+        message,
+        scheduledFor: new Date(),
+        sent: false
+      });
+      logger.info(`Notificación creada con ID: ${createdNotification.id}`);
+    } catch (error) {
+      logger.error(`Error al crear notificación para usuario ${userId}:`, error);
+    }
   }
 
   async sendNotifications(notification) {
@@ -62,27 +76,36 @@ class NotificationService {
   }
 
   async processNotificationQueue() {
+    logger.info('Procesando cola de notificaciones');
     const pendingNotifications = await Notification.findAll({
       where: { sent: false },
       order: [['scheduledFor', 'ASC']],
       limit: 100
     });
+    logger.info(`Notificaciones pendientes encontradas: ${pendingNotifications.length}`);
 
     for (const notification of pendingNotifications) {
       try {
         const user = await User.findByPk(notification.userId);
         if (user) {
+          logger.info(`Enviando notificación ${notification.id} a usuario ${user.id}`);
           await WhatsAppService.sendMessage(user.phoneNumber, notification.message);
           notification.sent = true;
           await notification.save();
+          logger.info(`Notificación ${notification.id} enviada y marcada como enviada`);
+        } else {
+          logger.warn(`Usuario no encontrado para la notificación ${notification.id}`);
         }
       } catch (error) {
-        logger.error(`Error sending notification to user ${notification.userId}:`, error);
+        logger.error(`Error al procesar notificación ${notification.id}:`, error);
       }
     }
 
     if (pendingNotifications.length === 100) {
+      logger.info('Programando próximo lote de notificaciones');
       setTimeout(() => this.processNotificationQueue(), 1000);
+    } else {
+      logger.info('Procesamiento de cola de notificaciones completado');
     }
   }
 
@@ -97,9 +120,11 @@ class NotificationService {
   }
 
   init() {
+    logger.info('Iniciando servicio de notificaciones');
     this.loadNotifications();
     this.scheduleNotifications();
     this.startNotificationQueue();
+    logger.info('Servicio de notificaciones iniciado');
   }
 
   startNotificationQueue() {
