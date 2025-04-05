@@ -1,15 +1,15 @@
 # TodoList: Plan de Implementación Secuencial
 
 ## Fase 0: Preparación (Semana 1, Días 1-3)
-- [ ] Crear repositorio en GitHub con estructura inicial
-- [ ] Configurar entorno de desarrollo y CI/CD básico
-- [ ] Crear cuentas y claves de API para servicios externos:
-  - [ ] Supabase
-  - [ ] OpenAI
-  - [ ] Mistral AI
-  - [ ] WhatsApp Business
-- [ ] Configurar variables de entorno en archivo .env
-- [ ] Inicializar proyecto Node.js y configurar dependencias básicas
+- [✅] Crear repositorio en GitHub con estructura inicial
+- [✅] Configurar entorno de desarrollo y CI/CD básico
+- [✅] Crear cuentas y claves de API para servicios externos:
+  - [✅] Supabase
+  - [✅] OpenAI
+  - [✅] Mistral AI
+  - [✅] WhatsApp Business
+- [✅] Configurar variables de entorno en archivo .env
+- [✅] Inicializar proyecto Node.js y configurar dependencias básicas
 
 ## Fase 1: MVP (Semanas 1-4)
 

@@ -1,28 +1,67 @@
 import * as express from 'express';
-import { Express, Request, Response, NextFunction } from 'express';
+import { Express, Request, Response } from 'express';
+// Importar correctamente usando require para evitar problemas con las importaciones por defecto
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const helmet = require('helmet');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const cors = require('cors');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const compression = require('compression');
 import { logger } from '@utils/logger';
+import { errorHandler, notFoundHandler } from '@utils/errors/errorHandler';
+import { env } from '@infrastructure/config/env';
+
+// Middleware de logging simple para HTTP requests
+const httpLogger = (req: Request, res: Response, next: express.NextFunction): void => {
+  const start = Date.now();
+  
+  // Capturar cuando la respuesta termina
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    
+    logger.info('HTTP Request', {
+      method: req.method,
+      url: req.url,
+      status: res.statusCode,
+      duration: `${duration}ms`,
+      userAgent: req.get('user-agent') || '',
+      ip: req.ip,
+    });
+  });
+  
+  next();
+};
 
 /**
- * Configura el servidor Express con los middleware y rutas necesarias
+ * Configura la aplicación Express con middlewares esenciales
+ * @param app Instancia de Express
  */
 export const configureServer = (app: Express): void => {
-  // Middleware para parsear JSON
-  app.use(express.json());
-  
-  // Middleware para logging de peticiones
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    logger.info(`${req.method} ${req.path}`);
-    next();
+  // Middlewares básicos de seguridad y optimización
+  app.use(helmet()); // Seguridad HTTP
+  app.use(cors()); // Habilitar CORS
+  app.use(compression()); // Comprimir respuestas
+  app.use(express.json()); // Parsear JSON en el body
+  app.use(express.urlencoded({ extended: true })); // Parsear URL-encoded
+
+  // Logger para peticiones HTTP
+  app.use(httpLogger);
+
+  // Ruta de estado/salud
+  app.get('/api/health', (req: Request, res: Response) => {
+    res.status(200).json({
+      status: 'UP',
+      timestamp: new Date().toISOString(),
+      environment: env.NODE_ENV,
+    });
   });
-  
-  // Ruta de verificación de salud
-  app.get('/health', (_req: Request, res: Response) => {
-    res.status(200).json({ status: 'ok', message: 'Wispen está funcionando correctamente' });
-  });
-  
-  // Manejo de errores global
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    logger.error(`Error: ${err.message}`, { stack: err.stack });
-    res.status(500).json({ error: 'Error interno del servidor' });
-  });
+
+  // Aquí se registrarán las rutas de la API
+  // app.use('/api/v1', apiRoutes);
+
+  // Manejo de rutas no encontradas (404)
+  app.use(notFoundHandler);
+
+  // Manejo centralizado de errores
+  app.use(errorHandler);
 }; 
