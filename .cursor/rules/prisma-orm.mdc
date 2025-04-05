@@ -1,0 +1,103 @@
+---
+Description: Prisma ORM Implementation Standards for Wispen
+Globs: 
+  - prisma/**/*
+  - src/**/*.prisma
+  - src/**/prisma/**/*
+  - src/adapters/repositories/**/*
+---
+
+# Prisma ORM Guidelines
+
+You are a Prisma ORM expert who ensures database operations follow clean architecture principles and best practices for the Wispen financial assistant application.
+
+## Schema Design
+
+- Use clear, consistent naming: PascalCase for models, camelCase for fields
+- Include comprehensive documentation comments for all models and fields
+- Define explicit relations with proper references and cascading behavior
+- Always include created_at and updated_at timestamps on all models
+- Use appropriate field types (e.g., Decimal for monetary values)
+- Implement proper indexing for frequently queried fields
+- Use enums for categorical data with fixed values
+
+## Core Models
+
+### Usuario
+- Primary model for user data with phone_number as unique identifier
+- Include preferences, settings, and profile information
+- Link to all user-specific models via relation fields
+
+### Transaccion
+- Track all financial transactions with proper amount, category, and timestamp fields
+- Use Decimal type with precision and scale for monetary values
+- Store media references for receipt images
+- Implement proper categorization fields
+
+### MetaAhorro
+- Define savings goals with target amount, deadline, and progress tracking
+- Use relations to link related transactions
+- Include status field for goal completion tracking
+
+### LimiteGasto
+- Configure spending limits by category and time period
+- Set notification thresholds and alert preferences
+- Track usage against defined limits
+
+## Clean Architecture Integration
+
+- Repository implementations should use Prisma Client but expose domain entities
+- Create mappers to transform between Prisma models and domain entities
+- Never leak Prisma-specific types outside repository layer
+- Handle ORM-specific errors within the repository layer
+
+## Migrations
+
+- Generate migrations for all schema changes
+- Review migration files before applying to production
+- Use descriptive names for migration files
+- Test migrations in staging environment before production
+- Implement rollback procedures for failed migrations
+- Document breaking changes in migration files
+
+## Query Optimization
+
+- Use include and select for efficient data retrieval
+- Implement proper filtering at the database level
+- Apply pagination for large result sets
+- Utilize transactions for atomic operations
+- Use findUnique for primary key lookups
+- Consider raw SQL for performance-critical queries
+
+## Performance Best Practices
+
+- Minimize N+1 query problems with proper includes
+- Use connection pooling effectively
+- Implement appropriate middleware for query logging and debugging
+- Consider queryRaw for complex operations when needed
+- Monitor query performance in production
+
+## Error Handling
+
+- Implement proper error handling for Prisma-specific errors
+- Map ORM errors to domain-specific exceptions
+- Log detailed errors but return sanitized responses
+- Handle constraint violations and validation errors gracefully
+- Implement retry logic for transient database errors
+
+## Testing
+
+- Use separate database for testing
+- Implement proper test fixtures and factories
+- Create database seeding procedures for tests
+- Reset database state between test runs
+- Mock Prisma client for unit tests
+- Use transactions to rollback test data
+
+## Security Considerations
+
+- Never expose Prisma models directly in API responses
+- Validate all input before passing to Prisma
+- Implement proper access control at the repository level
+- Use parameterized queries to prevent SQL injection
+- Follow principle of least privilege for database connections 

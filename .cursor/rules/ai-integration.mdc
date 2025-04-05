@@ -1,0 +1,109 @@
+---
+Description: AI Integration Standards for OpenAI and Mistral
+Globs: 
+  - src/infrastructure/ai/**/*
+  - src/adapters/services/**/*ai*
+  - src/**/*openai*
+  - src/**/*mistral*
+  - src/**/*assistant*
+  - src/**/*ocr*
+---
+
+# AI Integration Guidelines
+
+You are an AI integration expert who ensures proper implementation of OpenAI and Mistral services in the Wispen financial assistant application, following clean architecture principles.
+
+## General AI Integration Principles
+
+- Follow clean architecture patterns for all AI service integrations
+- Implement proper error handling and fallbacks for all AI operations
+- Cache responses when appropriate to minimize API costs
+- Use environment variables for all API keys and configuration
+- Never hardcode API keys or model names in application code
+- Implement proper retry mechanisms for transient errors
+- Log AI interactions for debugging and improvement (sanitizing sensitive data)
+- Monitor token usage and API costs through metrics collection
+
+## OpenAI Integration (GPT-4o)
+
+- Use GPT-4o for all AI functionality including text processing and speech-to-text
+- Implement the OpenAI Assistants API for managing conversational context
+- Create well-structured prompts with clear instructions and context
+- Use proper temperature settings based on task requirements:
+  - Lower (0.0-0.3) for deterministic, factual responses
+  - Higher (0.6-0.9) for creative content generation
+- Implement proper token counting and context management
+- Use function calling for structured data extraction from natural language
+- Properly handle streaming responses for better user experience
+
+### Assistants API Implementation
+
+- Design assistants with clear, specific instructions
+- Use appropriate tools based on functionality requirements
+- Properly manage threads for persistent conversations
+- Implement efficient message retrieval and storage
+- Handle runs and polling with appropriate timeout strategies
+- Structure assistant files and retrieval based on user needs
+- Implement proper error handling for assistant operations
+
+### Speech-to-Text with GPT-4o
+
+- Use GPT-4o's audio transcription capabilities instead
+- Optimize audio quality and formats before sending to the API
+- Implement proper error handling for audio processing failures
+- Consider chunking for longer audio files to improve processing speed
+- Validate transcription results before further processing
+
+## Mistral AI Integration
+
+- Use Mistral AI primarily for OCR and document processing
+- Implement proper document validation before sending to OCR
+- Apply appropriate preprocessing to images for optimal OCR results
+- Extract structured data from receipts and financial documents
+- Transform OCR output into domain-specific transaction entities
+- Implement confidence scoring for OCR results
+- Handle partial or low-confidence results appropriately
+
+### OCR Implementation
+
+- Preprocess images to improve OCR accuracy (contrast, alignment, noise reduction)
+- Extract relevant financial information from receipts (amount, date, merchant, category)
+- Implement validation for extracted financial data
+- Store original images alongside extracted data for verification
+- Structure OCR requests efficiently to minimize API costs
+- Handle different document types and formats appropriately
+
+## Integration with Domain Logic
+
+- Transform AI outputs into domain entities before use in business logic
+- Validate AI-generated content before processing in domain logic
+- Implement domain-specific validation rules for AI-extracted data
+- Maintain separation of concerns between AI services and business logic
+- Use adapters to transform between AI service interfaces and domain interfaces
+
+## Error Handling and Fallbacks
+
+- Implement graceful degradation when AI services are unavailable
+- Create fallback mechanisms for critical functionality
+- Provide clear error messages to users when AI processing fails
+- Implement retry logic with exponential backoff for transient errors
+- Log detailed error information for troubleshooting
+- Monitor error rates and performance metrics for each AI integration
+
+## Security and Privacy
+
+- Sanitize sensitive financial information before sending to AI services
+- Implement proper data retention and deletion policies
+- Use minimal context necessary for each AI interaction
+- Implement user consent mechanisms for AI processing
+- Provide transparency to users about AI usage
+- Follow regulatory requirements for financial data handling
+
+## Testing AI Integrations
+
+- Create mock responses for AI services in testing environments
+- Implement integration tests with recorded responses
+- Test edge cases and error handling paths
+- Validate AI processing against known expected outputs
+- Implement proper test fixtures for AI service testing
+- Use proper dependency injection to facilitate testing 

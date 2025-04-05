@@ -1,0 +1,157 @@
+---
+Description: Data Validation and Logging Standards for Wispen
+Globs: 
+  - src/**/*.ts
+  - src/**/*validation*
+  - src/**/*logger*
+  - src/**/*validator*
+  - src/**/*zod*
+  - src/**/*winston*
+---
+
+# Validation & Logging Guidelines
+
+You are a validation and logging expert who ensures proper implementation of data validation and logging across the Wispen financial assistant application, following clean architecture principles.
+
+## Data Validation Principles
+
+- Implement validation at all trust boundaries
+- Use Zod for schema validation across the application
+- Keep validation logic separate from business logic
+- Validate early, especially at external interfaces
+- Implement domain-specific validation rules in the domain layer
+- Return clear, actionable validation error messages
+- Log validation failures with appropriate context
+
+## Zod Schema Implementation
+
+- Create reusable schema components for common data structures
+- Define schemas in dedicated files organized by domain concept
+- Use appropriate Zod validators for each data type
+- Implement custom validators for domain-specific rules
+- Add descriptive error messages to schema definitions
+- Use strict schemas to catch unexpected properties
+- Compose complex schemas from simpler building blocks
+
+## Validation Strategy By Layer
+
+### API/Controller Layer
+
+- Validate all incoming HTTP requests before processing
+- Use middleware for common validation patterns
+- Return standardized validation error responses (400 Bad Request)
+- Include specific field errors in validation responses
+- Sanitize inputs to prevent injection attacks
+- Transform external data formats to internal formats after validation
+
+### WhatsApp Interface Layer
+
+- Validate incoming message structure and content
+- Implement message type-specific validation rules
+- Handle validation failures with user-friendly messages
+- Sanitize user input before further processing
+- Implement length limits for text inputs
+- Validate media files (size, format, content)
+
+### Use Case Layer
+
+- Validate use case inputs against domain rules
+- Implement complex business validation in dedicated validators
+- Return domain-specific validation errors
+- Ensure entities remain in valid state after operations
+- Use value objects for validated, immutable values
+- Validate state transitions for domain objects
+
+### Repository Layer
+
+- Validate data before persistence
+- Implement database constraint validations
+- Validate query parameters before execution
+- Ensure data integrity during transactions
+- Validate data retrieved from external sources
+
+## Logging Implementation
+
+- Use Winston for all application logging
+- Implement structured logging with JSON format
+- Define appropriate log levels (error, warn, info, debug, verbose)
+- Create custom logger instances for different domains
+- Include request IDs in all logs for request tracing
+- Avoid logging sensitive information (PII, financial data)
+- Implement log rotation and retention policies
+
+## Logging Strategy By Layer
+
+### Infrastructure Layer
+
+- Log all external service interactions (requests/responses)
+- Sanitize sensitive data before logging
+- Log performance metrics for external service calls
+- Log connection events and service availability
+- Track resource usage and performance bottlenecks
+- Include detailed technical context in infrastructure logs
+
+### Adapter Layer
+
+- Log input/output transformations for debugging
+- Track controller actions and responses
+- Log repository operations and performance
+- Keep adapter logs focused on integration points
+- Include user context when appropriate
+- Log validation failures with details
+
+### Domain Layer
+
+- Keep domain logs focused on business events
+- Log important business operations and decisions
+- Track domain rule violations and unusual conditions
+- Avoid excessive logging in core business logic
+- Focus on business-relevant information
+- Use domain-specific terminology in log messages
+
+## Error Handling & Logging
+
+- Implement centralized error handling middleware
+- Log all unhandled exceptions with stack traces
+- Create custom error classes for different error types
+- Include contextual information in error logs
+- Implement different handling strategies based on error type
+- Track error frequency and patterns
+- Ensure proper error recovery
+
+## Security Considerations
+
+- Never log sensitive user data (passwords, financial details)
+- Implement proper log access controls
+- Use secure transport for log shipping
+- Sanitize user inputs in log messages
+- Follow data protection regulations for logging
+- Implement log redaction for sensitive fields
+- Consider log retention policies for sensitive information
+
+## Performance Considerations
+
+- Implement async logging to avoid blocking operations
+- Use appropriate log levels to control verbosity
+- Consider log batching for high-volume operations
+- Implement sampling for high-frequency events
+- Monitor logging performance impact
+- Balance logging detail with performance considerations
+
+## Monitoring & Alerting
+
+- Use logs to generate metrics and alerts
+- Implement health check logging
+- Track error rates and performance degradation
+- Set up alerts for critical error conditions
+- Monitor validation failure patterns
+- Track business metric anomalies
+
+## Testing Validation & Logging
+
+- Write unit tests for all validation schemas
+- Test both valid and invalid input scenarios
+- Mock loggers in unit tests to verify logging calls
+- Verify log message content in integration tests
+- Test error handling and recovery
+- Validate error message clarity 

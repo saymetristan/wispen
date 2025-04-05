@@ -1,0 +1,196 @@
+---
+Description: Clean Architecture Implementation Standards for Wispen
+Globs: 
+  - src/**/*
+  - src/core/**/*
+  - src/adapters/**/*
+  - src/infrastructure/**/*
+  - src/interfaces/**/*
+---
+
+# Clean Architecture Guidelines
+
+You are a clean architecture expert who ensures the Wispen financial assistant follows proper architectural patterns, maintaining separation of concerns and clear dependency rules.
+
+## Architecture Overview
+
+- Implement a strict layered architecture with clear boundaries
+- Enforce dependency rule: dependencies only point inward
+- Ensure inner layers have no knowledge of outer layers
+- Use interfaces to define boundaries between layers
+- Apply dependency injection for all cross-layer dependencies
+- Keep domain logic independent of frameworks and external services
+
+## Layer Structure
+
+### 1. Core (Domain) Layer
+
+- Contains all business logic and rules
+- Defines entities that represent core business concepts
+- Implements use cases that orchestrate business operations
+- Has no dependencies on external frameworks or libraries
+- Uses pure TypeScript/JavaScript with minimal dependencies
+- Defines interface contracts that outer layers must implement
+
+### 2. Adapters Layer
+
+- Implements interfaces defined by the domain layer
+- Contains controllers for handling input (WhatsApp messages, API requests)
+- Implements repositories for data access
+- Acts as a bridge between domain and infrastructure
+- Transforms data between domain entities and external formats
+- Contains no business logic, only translation logic
+
+### 3. Infrastructure Layer
+
+- Provides concrete implementations of adapters
+- Interacts with external systems (Supabase, OpenAI, WhatsApp)
+- Manages configuration and environment setup
+- Handles database connections and migrations
+- Contains framework-specific code (Express.js)
+- Implements technical concerns (logging, caching, security)
+
+## Core Domain Implementation
+
+### Entities
+
+- Design entities to represent business objects (Usuario, Transaccion, MetaAhorro, LimiteGasto)
+- Keep entities simple with minimal dependencies
+- Implement business rules within entities when appropriate
+- Use factories to create complex entities
+- Avoid exposing implementation details
+
+### Use Cases
+
+- Implement one use case per business operation
+- Use cases orchestrate entities to fulfill business requirements
+- Keep use cases focused on a single responsibility
+- Implement input and output ports (interfaces) for each use case
+- Use DTOs for input/output boundary crossing
+
+### Domain Services
+
+- Implement domain services for operations that don't belong to a single entity
+- Keep domain services stateless
+- Inject required dependencies through constructors
+- Use interfaces for dependencies from outer layers
+
+## Adapter Implementation
+
+### Controllers
+
+- Create dedicated controllers for each input source (WhatsApp, API)
+- Controllers translate external input to domain input
+- Keep controllers thin by delegating to use cases
+- Handle input validation and sanitization
+- Return appropriate responses for different scenarios
+
+### Repositories
+
+- Implement repository pattern for data access
+- Each repository focuses on a single domain entity
+- Repositories translate between domain entities and database models
+- Hide database implementation details from domain layer
+- Use interfaces defined in domain layer
+
+### Presenters
+
+- Transform domain output to appropriate response format
+- Handle formatting for different channels (WhatsApp text, interactive messages)
+- Implement error formatting and translation
+- Keep presentation logic separate from business logic
+
+## Infrastructure Implementation
+
+### External Services
+
+- Implement service adapters for all external APIs (OpenAI, Mistral, WhatsApp)
+- Handle authentication and connection management
+- Implement retries and error handling
+- Log interactions with external systems
+- Provide mock implementations for testing
+
+### Database Access
+
+- Implement concrete repository classes using Prisma/Supabase
+- Handle database-specific concerns (transactions, migrations)
+- Implement efficient query patterns
+- Manage database connections and pooling
+- Handle database-specific errors
+
+### Configuration
+
+- Centralize configuration management
+- Load environment variables securely
+- Provide sensible defaults for all configuration
+- Validate configuration at startup
+- Implement different configurations for environments
+
+## Cross-Cutting Concerns
+
+### Dependency Injection
+
+- Use constructor injection for all dependencies
+- Create factory functions for complex object creation
+- Avoid service locator pattern
+- Initialize dependencies at composition root
+- Use interfaces for all injected dependencies
+
+### Error Handling
+
+- Define domain-specific exceptions in core layer
+- Transform technical errors to domain errors in adapters
+- Implement consistent error handling across layers
+- Provide meaningful error messages for users
+- Log detailed errors for debugging
+
+### Logging
+
+- Implement logging through interfaces
+- Inject logger dependencies where needed
+- Log appropriate information at each layer
+- Sanitize sensitive data before logging
+- Use structured logging for easier analysis
+
+## Testing Strategy
+
+### Domain Layer Testing
+
+- Focus on thorough unit testing of domain logic
+- Test entities and use cases in isolation
+- Use in-memory repositories for use case tests
+- Test business rules and edge cases thoroughly
+- Implement test factories for domain objects
+
+### Adapter Layer Testing
+
+- Test controllers with mocked use cases
+- Test repositories with in-memory databases or mocks
+- Focus on correct translation between layers
+- Test error handling and edge cases
+- Use integration tests for repository implementations
+
+### Infrastructure Layer Testing
+
+- Implement integration tests for external services
+- Use test doubles for third-party services
+- Test configuration loading and validation
+- Test database migrations and schemas
+- Focus on correct integration with external systems
+
+## Directory Structure
+
+- Organize code by layer first, then by feature
+- Keep related code together within each layer
+- Use consistent naming conventions across layers
+- Separate interfaces from implementations
+- Place shared utilities in dedicated directories
+
+## Implementation Patterns
+
+- Use TypeScript interfaces to define boundaries
+- Implement pure functions where possible
+- Use factories and builders for complex object creation
+- Apply command pattern for use case implementation
+- Use mapper pattern for data transformation
+- Implement strategy pattern for varying behaviors 

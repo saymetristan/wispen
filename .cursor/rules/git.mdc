@@ -1,0 +1,137 @@
+---
+Description: Git and Version Control Standards for Wispen
+Globs: 
+  - .github/**/*
+  - .git/**/*
+  - .gitignore
+  - .gitattributes
+  - **/*.md
+---
+
+# Git & Version Control Guidelines
+
+You are a Git and version control expert who ensures proper implementation of source control practices for the Wispen financial assistant application, promoting code quality and team collaboration.
+
+## Commit Guidelines
+
+- Use conventional commits format: `type(scope): message`
+- Keep commit messages concise but descriptive (50 chars max for title)
+- Use present tense in commit messages ("add feature" not "added feature")
+- Reference issue numbers in commit messages when applicable
+- Break large changes into logical, smaller commits
+- Ensure each commit compiles and passes tests
+- Include detailed explanations in commit body for complex changes
+- Sign your commits when required by project policy
+
+## Commit Types
+
+- `feat`: New features or significant functionality additions
+- `fix`: Bug fixes
+- `docs`: Documentation changes only
+- `style`: Code style changes (formatting, semicolons, etc.)
+- `refactor`: Code changes that neither fix bugs nor add features
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks, dependency updates, etc.
+- `ci`: Changes to CI/CD configuration
+- `build`: Changes to build system or dependencies
+
+## Branch Management
+
+- Use `main` as the primary production branch
+- Create feature branches from `main` for all development work
+- Name branches with descriptive, hyphenated names: `feature/user-authentication`
+- Use prefix conventions:
+  - `feature/` for new features
+  - `fix/` for bug fixes
+  - `hotfix/` for urgent production fixes
+  - `release/` for release preparations
+  - `docs/` for documentation updates
+- Delete branches after they're merged
+
+## Branch Protection Rules
+
+- Protect the `main` branch from direct pushes
+- Require pull requests for changes to protected branches
+- Enforce code review approvals before merging
+- Require status checks to pass before merging
+- Keep protected branch history linear when possible
+- Automatically delete merged feature branches
+
+## Pull Request Workflow
+
+- Create descriptive pull request titles and descriptions
+- Reference related issues in pull request descriptions
+- Keep pull requests focused on a single feature or fix
+- Include tests that cover new functionality
+- Assign appropriate reviewers
+- Address review comments promptly
+- Squash commits before merging when appropriate
+- Use meaningful titles for squashed commits
+
+## Collaboration Practices
+
+- Pull and rebase frequently to minimize merge conflicts
+- Resolve conflicts promptly when they occur
+- Communicate with team about significant branch changes
+- Use draft pull requests for work in progress
+- Provide constructive code review feedback
+- Document significant architectural decisions
+
+## Git Configuration
+
+- Use consistent line endings (.gitattributes)
+- Configure appropriate .gitignore for project
+- Set up Git hooks for enforcing standards
+- Configure Git LFS for large binary files
+- Set appropriate merge strategies
+
+## Code Review Standards
+
+- Review code changes for logic and functionality
+- Verify adherence to project coding standards
+- Check for potential security issues
+- Ensure proper error handling
+- Validate test coverage for new code
+- Confirm documentation is updated when needed
+
+## Versioning
+
+- Follow semantic versioning (MAJOR.MINOR.PATCH)
+- Tag all releases with version numbers
+- Maintain a changelog for notable changes
+- Document breaking changes clearly
+- Create release branches for major versions
+- Backport critical fixes to supported versions
+
+## Git Hooks
+
+- Use pre-commit hooks for linting and formatting
+- Implement commit-msg hooks for enforcing commit conventions
+- Configure pre-push hooks for running tests
+- Use prepare-commit-msg for templates
+- Ensure hooks are shared with the team
+
+## CI/CD Integration
+
+- Trigger CI builds on pull request creation/update
+- Run automated tests before allowing merges
+- Deploy preview environments for pull requests when applicable
+- Automate release processes with tags
+- Enforce branch policy compliance via CI checks
+
+## Security Considerations
+
+- Avoid committing secrets or credentials
+- Scan repository for accidental secret commits
+- Use signed commits for verified changes
+- Implement proper access controls for repository
+- Regular security audits of repository contents
+
+## Documentation
+
+- Keep README up to date with repository information
+- Document Git workflows for team reference
+- Maintain contributing guidelines
+- Record project history in CHANGELOG.md
+- Use issue and PR templates to standardize contributions 

@@ -1,0 +1,148 @@
+---
+Description: WhatsApp Business API Integration Standards for Wispen
+Globs: 
+  - src/**/*whatsapp*
+  - src/adapters/controllers/whatsapp/**/*
+  - src/infrastructure/messaging/**/*
+  - src/core/interfaces/messaging.ts
+---
+
+# WhatsApp Business API Integration Guidelines
+
+You are a WhatsApp API expert who ensures proper implementation of messaging functionality for the Wispen financial assistant, following clean architecture principles.
+
+## Connection and Setup
+
+- Implement secure connection to WhatsApp Business API using environment variables
+- Configure proper webhook verification and challenge response
+- Handle connection status and reconnection logic
+- Implement proper logging for connection events
+- Set up appropriate error handling for connection issues
+- Configure proper message queuing for high reliability
+
+## Message Reception
+
+- Implement handlers for all WhatsApp message types
+- Properly identify and extract user information from incoming messages
+- Validate webhook signatures for security
+- Implement rate limiting to prevent abuse
+- Handle message ordering and potential duplicates
+- Properly acknowledge message receipt
+
+## Message Format Handling
+
+### Text Messages
+- Properly parse and sanitize incoming text
+- Handle special characters and encoding issues
+- Extract commands and parameters from text messages
+- Process multilingual text appropriately
+- Handle message formatting (bold, italic, etc.)
+
+### Audio Messages
+- Extract and validate audio file formats (opus, mp3, etc.)
+- Implement proper audio file storage in Supabase
+- Configure audio processing pipeline with GPT-4o
+- Handle audio length limitations
+- Implement proper error handling for failed audio processing
+
+### Image Messages
+- Extract and validate image formats (jpeg, png, etc.)
+- Implement image preprocessing for OCR optimization
+- Configure storage for receipt images in Supabase
+- Handle image resolution and size limitations
+- Process image metadata when available
+
+### Document Messages
+- Handle PDF and other document formats
+- Implement document validation and virus scanning
+- Configure processing pipeline for document extraction
+- Store documents securely with proper access control
+
+### Location Messages
+- Extract location data from WhatsApp location messages
+- Validate coordinates and location information
+- Associate location data with transactions when relevant
+- Handle location privacy concerns appropriately
+
+### Contact Messages
+- Process WhatsApp shared contacts when relevant
+- Validate contact information for security
+- Handle contact information with privacy considerations
+
+### Interactive Messages
+- Process button responses from interactive messages
+- Handle list selections properly
+- Track interaction state for multi-step processes
+- Implement proper timeout handling for interactive elements
+
+## Message Response Construction
+
+- Structure responses according to WhatsApp API requirements
+- Implement proper formatting for text responses
+- Create well-structured interactive messages with buttons and lists
+- Generate and send media responses (images, documents)
+- Include appropriate templates for common scenarios
+- Implement proper delay handling for natural conversation flow
+
+## WhatsApp Templates
+
+- Create and manage message templates for notifications
+- Follow WhatsApp approval guidelines for templates
+- Implement proper template variables and formatting
+- Track template performance and delivery status
+- Handle template rejection gracefully
+- Test templates across different device types
+
+## User Session Management
+
+- Implement proper user identification and session tracking
+- Handle conversation context across multiple messages
+- Implement session timeouts and expiration logic
+- Store contextual information for ongoing conversations
+- Handle multi-device scenarios properly
+
+## Error Handling
+
+- Implement proper error handling for all WhatsApp API responses
+- Handle rate limiting errors with exponential backoff
+- Provide user-friendly error messages for WhatsApp-related issues
+- Log detailed error information for troubleshooting
+- Implement retry logic for transient errors
+- Handle disconnections and reconnections gracefully
+
+## Security and Compliance
+
+- Implement proper webhook verification
+- Secure all WhatsApp API credentials
+- Follow WhatsApp Business Policy for messaging
+- Implement opt-in and opt-out handling
+- Respect user privacy and data protection regulations
+- Implement message retention policies according to regulations
+- Ensure compliance with WhatsApp's commerce and financial services policies
+
+## Performance Optimization
+
+- Implement proper caching for frequently used responses
+- Optimize media handling for quick response times
+- Monitor and optimize message throughput
+- Implement proper connection pooling
+- Optimize for minimal API calls
+- Handle batching when appropriate for bulk operations
+
+## Testing WhatsApp Integration
+
+- Implement proper mocking for WhatsApp API in tests
+- Create test fixtures for all message types
+- Test error handling and edge cases
+- Validate message format compliance
+- Test template rendering with various data
+- Implement integration tests with WhatsApp sandbox
+
+## Metrics and Monitoring
+
+- Track message delivery rates and failures
+- Monitor API usage and rate limits
+- Implement proper logging for all WhatsApp interactions
+- Track user engagement metrics
+- Monitor response times and optimize accordingly
+- Implement alerts for critical WhatsApp API issues 

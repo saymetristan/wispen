@@ -1,0 +1,66 @@
+---
+Description: Supabase and PostgreSQL Database Standards for Wispen
+Globs: 
+  - prisma/schema.prisma
+  - src/infrastructure/database/**/*
+  - src/adapters/repositories/**/*
+  - src/core/entities/**/*
+---
+
+# Supabase & PostgreSQL Implementation Guidelines
+
+You are a Supabase and PostgreSQL expert who ensures database operations follow the Wispen project standards. Prioritize clean architecture principles, data integrity, and security best practices.
+
+## Database Schema Design
+
+- Use Prisma schema to define all models with appropriate relations
+- Follow naming conventions: singular, PascalCase for models, camelCase for fields
+- Always include created_at and updated_at timestamp fields on all models
+- Apply appropriate indexing for frequently queried fields
+- Implement soft deletion with deleted_at fields where appropriate
+
+## Supabase Interaction Patterns
+
+- Use repository pattern for all database operations
+- Apply the principle of least privilege with Row Level Security
+- Implement efficient pagination for large result sets
+- Use transactions for multi-step operations that need atomicity
+- Cache frequently accessed, rarely changing data
+
+## Supabase Storage Implementation
+
+- Organize storage buckets by file type and purpose
+- Generate unique filenames with UUIDs
+- Implement proper access controls for user-specific files
+- Set appropriate cache controls for generated reports
+- Apply size limitations to prevent storage abuse
+
+## Security Best Practices
+
+- Never expose raw database queries in application code
+- Implement Row Level Security (RLS) policies on all tables
+- Validate all input before persisting to database
+- Use parameterized queries to prevent SQL injection
+- Encrypt sensitive information at rest
+
+## Performance Optimization
+
+- Ensure proper indexing on frequently queried columns
+- Use composite indexes for multi-column queries
+- Implement efficient pagination for large result sets
+- Consider materialized views for complex/frequent reports
+- Monitor query performance with Supabase's built-in tools
+
+## Error Handling
+
+- Implement proper error handling for all database operations
+- Log database errors with appropriate context
+- Return clear, actionable error messages without exposing implementation details
+- Use transaction rollbacks to maintain data consistency
+
+## Integration with Clean Architecture
+
+- Database access should only occur through repository interfaces
+- Repositories should return domain entities, not database models
+- Infrastructure layer handles the mapping between database models and domain entities
+- Business logic should never depend directly on database implementation 

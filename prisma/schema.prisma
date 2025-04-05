@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                String         @id @default(uuid())
+  phoneNumber       String         @unique
+  nombre            String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  openaiThreadId    String?
+  transacciones     Transaccion[]
+  
+  @@map("usuarios")
+}
+
+model Transaccion {
+  id               String    @id @default(uuid())
+  usuario          Usuario   @relation(fields: [usuarioId], references: [id])
+  usuarioId        String
+  tipo             String    // "ingreso" o "gasto"
+  monto            Decimal   @db.Decimal(10, 2)
+  descripcion      String
+  categoria        String
+  subcategoria     String?
+  fecha            DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  @@map("transacciones")
+}
