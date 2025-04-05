@@ -1,0 +1,68 @@
+---
+Description: Patrones de Importación y Estándares para Wispen
+Globs: 
+  - src/**/*.ts
+  - src/**/*.js
+---
+
+# Patrones de Importación para Wispen
+
+You are an import organization expert who ensures consistent import patterns across the Wispen financial assistant codebase, following clean architecture principles.
+
+## Orden de Importaciones
+
+- Mantener importaciones agrupadas por tipo con una línea en blanco entre grupos
+- Seguir un orden consistente:
+  1. Importaciones de librerías externas/third-party
+  2. Importaciones usando path aliases (@core, @adapters, etc.)
+  3. Importaciones relativas
+- Ordenar alfabéticamente dentro de cada grupo para facilitar la búsqueda
+
+## Formato de Importaciones
+
+- Usar imports nombrados con llaves para múltiples imports de un mismo módulo
+- Evitar imports con asterisco (*) excepto cuando sea absolutamente necesario
+- Usar imports por defecto solo cuando sea apropiado (principalmente para librerías externas)
+- Ser consistente con el uso de comillas (simples o dobles) en toda la base de código
+
+## Path Aliases
+
+- Usar path aliases (@core, @adapters, etc.) para referencias entre capas de arquitectura
+- Evitar paths relativos complejos (../../..) en favor de path aliases
+- Nunca mezclar path aliases con rutas relativas para el mismo módulo
+- Mantener la estructura de aliases alineada con la arquitectura limpia
+
+## Importaciones Específicas
+
+- Importar solo lo necesario, evitando imports innecesarios
+- Evitar la duplicación de importaciones
+- Eliminar imports no utilizados
+- Ser específico en lugar de importar módulos completos
+
+## Ejemplos
+
+### ✅ Correcto
+
+typescript
+// Imports de librerías externas
+import express from 'express';
+import dotenv from 'dotenv';
+import { z } from 'zod';
+// Imports con path aliases
+import { Usuario } from '@core/entities/usuario';
+import { UsuarioRepository } from '@adapters/repositories/usuario.repository';
+import { logger } from '@infrastructure/config/logger';
+// Imports relativos
+import { formatDate } from './utils';
+
+### ❌ Incorrecto
+
+typescript
+import { formatDate } from './utils';
+import dotenv from 'dotenv';
+import as allUtils from '../../utils/index';
+import express from 'express';
+import { Usuario } from '@core/entities/usuario';
+import { logger } from '@infrastructure/config/logger';
+import {z} from 'zod';
+import {UsuarioRepository} from '@adapters/repositories/usuario.repository'
