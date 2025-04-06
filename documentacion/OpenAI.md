@@ -109,3 +109,104 @@ Se recomienda ejecutar el segundo script para verificar que la integración con 
 - **Persistencia de contexto**: Los threads preservan el contexto, pero tienen una vida útil limitada
 - **Costos**: El uso de la API de OpenAI conlleva costos basados en tokens
 - **Latencia**: Las interacciones con la API pueden verse afectadas por problemas de red 
+
+## Funcionalidades del Asistente Financiero
+
+El asistente financiero implementado con OpenAI Assistant API tiene las siguientes funcionalidades:
+
+### 1. Registro de Transacciones
+
+El asistente puede registrar transacciones (ingresos y gastos) en la base de datos a partir de mensajes de texto del usuario.
+
+Ejemplos:
+- "Registra un gasto de 350 pesos en comida que hice ayer"
+- "Acabo de recibir 5000 pesos de mi sueldo"
+- "Gasté 200 pesos en transporte esta mañana"
+
+La funcionalidad incluye:
+- Interpretación de la intención del usuario
+- Extracción del monto, categoría y fecha de la transacción
+- Categorización automática basada en palabras clave
+- Almacenamiento en la base de datos
+- Confirmación al usuario con el saldo actualizado
+
+### 2. Consulta de Saldo
+
+El asistente permite consultar el saldo actual o de un período específico.
+
+Ejemplos:
+- "¿Cuál es mi saldo actual?"
+- "¿Cuánto dinero me queda disponible?"
+- "¿Cuál fue mi saldo en mayo?"
+
+La funcionalidad incluye:
+- Interpretación de la consulta
+- Aplicación de filtros por período si se especifican
+- Cálculo del saldo a partir de ingresos y gastos
+- Presentación de la información de forma amigable
+
+### 3. Generación de Reportes
+
+El asistente puede generar reportes de ingresos y gastos con diferentes agrupaciones.
+
+Ejemplos:
+- "Dame un reporte de gastos de este mes"
+- "¿En qué he gastado más dinero este mes?"
+- "Muéstrame mis ingresos del mes pasado"
+
+La funcionalidad incluye:
+- Generación de reportes por tipo (ingresos, gastos o balance)
+- Agrupación por categoría o por fecha
+- Cálculo de totales y promedios
+- Presentación estructurada de la información
+
+## Implementación Técnica
+
+### Componentes Clave
+
+1. **OpenAIToolHandler**: Maneja las llamadas a herramientas (tools) realizadas por el asistente OpenAI y ejecuta los casos de uso correspondientes.
+
+2. **AssistantTools**: Define las especificaciones de las herramientas (tools) para OpenAI Assistant API, incluyendo:
+   - `registrar_transaccion`: Para el registro de ingresos y gastos
+   - `consultar_saldo`: Para consultas de saldo
+   - `generar_reporte`: Para generación de reportes financieros
+
+3. **Casos de Uso**:
+   - `RegisterTransactionUseCase`: Implementa la lógica para registrar transacciones
+   - `GetBalanceUseCase`: Implementa la lógica para consultar saldos
+   - `GenerateReportUseCase`: Implementa la lógica para generar reportes
+
+4. **TransactionCategoryService**: Servicio para la categorización automática de transacciones basada en el análisis de palabras clave en la descripción.
+
+### Flujo de Procesamiento
+
+1. El usuario envía un mensaje a través de WhatsApp
+2. El mensaje es procesado por `ProcessWhatsAppMessage` 
+3. El mensaje se envía al asistente de OpenAI a través de `OpenAIAssistantService`
+4. Si el asistente identifica una acción financiera, llama a la herramienta correspondiente
+5. `OpenAIToolHandler` ejecuta el caso de uso apropiado
+6. El resultado se devuelve al asistente de OpenAI
+7. El asistente genera una respuesta en lenguaje natural para el usuario
+8. La respuesta se envía al usuario a través de WhatsApp
+
+## Prueba de las Funcionalidades
+
+Para probar las funcionalidades del asistente financiero, puedes ejecutar el script de prueba:
+
+```bash
+npx ts-node -r tsconfig-paths/register src/test-financial-assistant.ts
+```
+
+Este script realizará pruebas de todas las funcionalidades principales:
+- Consulta de saldo
+- Registro de gastos e ingresos
+- Generación de reportes
+
+## Limitaciones y Mejoras Futuras
+
+1. **Categorización Avanzada**: Implementar ML para mejorar la categorización de transacciones
+2. **Reportes Visuales**: Generar gráficos y tablas visuales para los reportes
+3. **Presupuestos**: Permitir establecer y monitorear presupuestos por categoría
+4. **Alertas**: Notificaciones sobre gastos excesivos o recordatorios de pagos
+5. **Multimoneda**: Soporte para diferentes tipos de moneda y conversión
+6. **Exportación**: Exportar reportes en formatos como PDF, Excel o CSV 

@@ -1,84 +1,93 @@
-import { UserRepository } from '../domain/repositories/UserRepository';
-import { ThreadRepository } from '../domain/repositories/ThreadRepository';
-import { OpenAIAssistantService } from '@infrastructure/services/openai/OpenAIAssistantService';
 import { RepositoryFactory } from '@infrastructure/database/RepositoryFactory';
-import { logger } from '@utils/logger';
-import { WhatsAppService } from '@infrastructure/services/whatsapp/WhatsAppService';
+import { UserRepository } from '@core/domain/repositories/UserRepository';
+import { User } from '@core/domain/User';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@utils/logger';
+import { OpenAIAssistantService } from '@infrastructure/services/openai/OpenAIAssistantService';
 
 /**
- * Caso de uso para procesar mensajes entrantes de WhatsApp
+ * Caso de uso para procesar un mensaje de WhatsApp y generar una respuesta
  */
 export class ProcessWhatsAppMessage {
   private userRepository: UserRepository;
-  private threadRepository: ThreadRepository;
-  private openaiAssistantService: OpenAIAssistantService;
-  private whatsappService: WhatsAppService;
+  private openAIAssistantService: OpenAIAssistantService;
 
   constructor() {
     this.userRepository = RepositoryFactory.getUserRepository();
-    this.threadRepository = RepositoryFactory.getThreadRepository();
-    this.openaiAssistantService = new OpenAIAssistantService();
-    this.whatsappService = new WhatsAppService();
+    this.openAIAssistantService = new OpenAIAssistantService();
   }
 
   /**
-   * Procesa un mensaje entrante de WhatsApp
-   * @param phone Número de teléfono del remitente
-   * @param message Contenido del mensaje
+   * Procesa un mensaje de WhatsApp y genera una respuesta
+   * @param phone Número de teléfono del usuario (con código de país)
+   * @param message Mensaje enviado por el usuario
+   * @returns Respuesta generada para el usuario
    */
   async execute(phone: string, message: string): Promise<string> {
     try {
-      // 1. Buscar o crear usuario por número de teléfono
+      logger.info('Procesando mensaje de WhatsApp', {
+        phone,
+        messageLength: message.length
+      });
+
+      // Encontrar o crear el usuario
       const user = await this.findOrCreateUser(phone);
+      
+      // Procesar el mensaje con el asistente de OpenAI
+      const response = await this.openAIAssistantService.processMessage(user.id, message);
+      
+      logger.info('Mensaje procesado correctamente', {
+        userId: user.id,
+        phone
+      });
 
-      // 2. Buscar o crear thread para el usuario
-      const thread = await this.threadRepository.findOrCreateByUserId(user.id);
-
-      // 3. Añadir mensaje al thread
-      await this.openaiAssistantService.addMessageToThread(thread.id, message);
-
-      // 4. Ejecutar el asistente para obtener respuesta
-      const response = await this.openaiAssistantService.runAssistant(thread.id);
-
-      // 5. Devolver la respuesta
       return response;
     } catch (error) {
       logger.error('Error al procesar mensaje de WhatsApp', {
         error: (error as Error).message,
-        phone,
+        phone
       });
-      
-      // Devolver un mensaje de error genérico
-      return '😕 Lo siento, tuve un problema al procesar tu mensaje. ¿Podrías intentarlo de nuevo?';
+
+      // Respuesta por defecto en caso de error
+      return 'Lo siento, ocurrió un error al procesar tu mensaje. Por favor, intenta de nuevo más tarde.';
     }
   }
 
   /**
-   * Busca un usuario por su teléfono o lo crea si no existe
+   * Encuentra o crea un usuario por su número de teléfono
    */
-  private async findOrCreateUser(phone: string) {
-    // Formatear teléfono (eliminar + si existe)
-    const formattedPhone = phone.startsWith('+') ? phone.substring(1) : phone;
+  private async findOrCreateUser(phone: string): Promise<User> {
+    // Formatear el número de teléfono (eliminar espacios, guiones, etc.)
+    const formattedPhone = this.formatPhoneNumber(phone);
     
-    // Buscar usuario
-    let user = await this.userRepository.findByPhone(formattedPhone);
+    // Buscar el usuario por teléfono
+    const existingUser = await this.userRepository.findByPhone(formattedPhone);
     
-    // Si no existe, crearlo
-    if (!user) {
-      // Importar la clase User aquí para evitar importaciones circulares
-      const { User } = await import('../domain/User');
-      
-      // Crear nueva instancia con un ID generado con UUID
-      const newUser = new User(uuidv4(), formattedPhone);
-      user = await this.userRepository.create(newUser);
-      
-      logger.info('Nuevo usuario creado', { 
-        userId: user.id,
-        phone: formattedPhone
-      });
+    if (existingUser) {
+      return existingUser;
     }
     
-    return user;
+    // Si no existe, crear un nuevo usuario
+    logger.info('Creando nuevo usuario', { phone: formattedPhone });
+    
+    const newUser = new User(uuidv4(), formattedPhone);
+    
+    // Guardar en la base de datos
+    const savedUser = await this.userRepository.save(newUser);
+    
+    logger.info('Usuario creado correctamente', {
+      userId: savedUser.id,
+      phone: formattedPhone
+    });
+    
+    return savedUser;
+  }
+  
+  /**
+   * Formatea un número de teléfono eliminando caracteres no numéricos
+   */
+  private formatPhoneNumber(phone: string): string {
+    // Eliminar todos los caracteres que no sean números
+    return phone.replace(/\D/g, '');
   }
 } 

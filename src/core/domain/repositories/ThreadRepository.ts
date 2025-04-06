@@ -7,8 +7,9 @@ import { Thread } from '../openai/Thread';
 export interface ThreadRepository {
   // Operaciones CRUD básicas
   findById(id: string): Promise<Thread | null>;
-  findByUserId(userId: string): Promise<Thread[]>;
+  findByUserId(userId: string): Promise<Thread | null>;
   create(thread: Thread): Promise<Thread>;
+  save(thread: any): Promise<Thread>;
   update(thread: Thread): Promise<Thread>;
   delete(id: string): Promise<void>;
   

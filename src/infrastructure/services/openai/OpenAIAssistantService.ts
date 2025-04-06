@@ -1,8 +1,15 @@
 import OpenAI from 'openai';
 import { OpenAIClient } from './OpenAIClient';
-import { Thread } from '@core/domain/openai/Thread';
 import { logger } from '@utils/logger';
 import { env } from '@infrastructure/config/env';
+import { AsyncLocalStorage } from 'async_hooks';
+import { ThreadRepository } from '@core/domain/repositories/ThreadRepository';
+import { RepositoryFactory } from '@infrastructure/database/RepositoryFactory';
+import { OpenAIToolHandler } from './OpenAIToolHandler';
+import { Thread } from '@core/domain/openai/Thread';
+import { RunStatus } from 'openai/resources/beta/threads/runs/runs';
+
+const asyncLocalStorage = new AsyncLocalStorage<string>();
 
 /**
  * Servicio para interactuar con la API de Assistants de OpenAI
@@ -10,9 +17,13 @@ import { env } from '@infrastructure/config/env';
 export class OpenAIAssistantService {
   private openai: OpenAI;
   private assistantId: string | null = null;
+  private threadRepository: ThreadRepository;
+  private toolHandler: OpenAIToolHandler;
 
   constructor() {
     this.openai = OpenAIClient.getInstance();
+    this.threadRepository = RepositoryFactory.getThreadRepository();
+    this.toolHandler = new OpenAIToolHandler();
   }
 
   /**
@@ -217,5 +228,180 @@ export class OpenAIAssistantService {
     - "Cuánto dinero tengo?" -> Consultar saldo
     - "En qué he gastado este mes?" -> Resumen de gastos
     `;
+  }
+
+  /**
+   * Procesa un mensaje del usuario y genera una respuesta del asistente
+   */
+  async processMessage(userId: string, message: string): Promise<string> {
+    try {
+      // Buscar o crear el thread para este usuario
+      const userThread = await this.findOrCreateThread(userId);
+      const threadId = userThread.id;
+
+      logger.info('Procesando mensaje de usuario', {
+        userId,
+        threadId,
+        messageLength: message.length
+      });
+
+      // Añadir el mensaje al thread
+      const createdMessage = await this.openai.beta.threads.messages.create(threadId, {
+        role: 'user',
+        content: message,
+      });
+      logger.info('Mensaje añadido al thread', {
+        messageId: createdMessage.id,
+        threadId,
+        userId
+      });
+
+      // Ejecutar el asistente
+      const run = await this.openai.beta.threads.runs.create(threadId, {
+        assistant_id: await this.getOrCreateAssistant(),
+      });
+      logger.info('Ejecución iniciada', { runId: run.id, userId, threadId });
+
+      // Esperar a que termine la ejecución o requiera acción
+      let currentRun = run;
+      while (
+        currentRun.status !== 'completed' &&
+        currentRun.status !== 'failed' &&
+        currentRun.status !== 'cancelled' &&
+        currentRun.status !== 'expired'
+      ) {
+        // Esperar antes de consultar de nuevo
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Obtener el estado actual
+        currentRun = await this.openai.beta.threads.runs.retrieve(threadId, currentRun.id);
+        
+        // Si requiere acción para herramientas
+        if (currentRun.status === 'requires_action') {
+          if (currentRun.required_action?.type === 'submit_tool_outputs') {
+            const toolCalls = currentRun.required_action.submit_tool_outputs.tool_calls;
+            const toolOutputs = [];
+
+            // Procesar cada llamada a herramienta
+            for (const toolCall of toolCalls) {
+              logger.info('Procesando llamada a herramienta', {
+                tool: toolCall.function.name,
+                userId
+              });
+
+              // Ejecutar la herramienta
+              const result = await this.toolHandler.handleToolCall(toolCall, userId);
+              
+              // Añadir el resultado
+              toolOutputs.push({
+                tool_call_id: toolCall.id,
+                output: JSON.stringify(result)
+              });
+            }
+
+            // Enviar los resultados
+            currentRun = await this.openai.beta.threads.runs.submitToolOutputs(threadId, currentRun.id, {
+              tool_outputs: toolOutputs
+            });
+          }
+        }
+        
+        logger.debug('Estado de ejecución', {
+          runId: currentRun.id,
+          status: currentRun.status,
+          userId
+        });
+      }
+
+      // Verificar si la ejecución fue exitosa
+      if (currentRun.status !== 'completed') {
+        logger.error('Ejecución fallida', {
+          runId: currentRun.id,
+          status: currentRun.status,
+          userId
+        });
+        return 'Lo siento, ocurrió un error al procesar tu mensaje. Por favor, intenta de nuevo más tarde.';
+      }
+
+      // Obtener la respuesta del asistente
+      const messages = await this.openai.beta.threads.messages.list(threadId, {
+        limit: 1,
+        order: 'desc'
+      });
+
+      if (messages.data.length === 0) {
+        logger.error('No se encontraron mensajes después de la ejecución', {
+          runId: currentRun.id,
+          userId
+        });
+        return 'Lo siento, no pude generar una respuesta. Por favor, intenta de nuevo.';
+      }
+
+      const assistantMessage = messages.data[0];
+      const content = assistantMessage.content[0];
+
+      if (content.type !== 'text') {
+        logger.error('El tipo de contenido no es texto', {
+          contentType: content.type,
+          userId
+        });
+        return 'Lo siento, recibí un formato de respuesta que no puedo procesar. Por favor, intenta de nuevo.';
+      }
+
+      const response = content.text.value;
+      logger.info('Respuesta generada', {
+        userId,
+        responseLength: response.length,
+        messageId: assistantMessage.id
+      });
+
+      return response;
+
+    } catch (error) {
+      logger.error('Error al procesar mensaje', {
+        error: (error as Error).message,
+        userId
+      });
+      return 'Lo siento, ocurrió un error al procesar tu mensaje. Por favor, intenta de nuevo más tarde.';
+    }
+  }
+
+  /**
+   * Busca o crea un thread para el usuario
+   */
+  private async findOrCreateThread(userId: string) {
+    // Buscar el thread en la base de datos
+    let userThread = await this.threadRepository.findByUserId(userId);
+
+    // Si no existe, crear uno nuevo
+    if (!userThread) {
+      logger.info('Creando nuevo thread para usuario', { userId });
+      
+      // Crear el thread en OpenAI
+      const newThread = await this.openai.beta.threads.create({
+        metadata: {
+          userId: userId
+        }
+      });
+      
+      // Crear una nueva entidad Thread
+      const threadEntity = new Thread(
+        newThread.id,
+        userId,
+        { created_by: 'openai_assistant' },
+        new Date(),
+        new Date()
+      );
+      
+      // Guardar en la base de datos
+      userThread = await this.threadRepository.create(threadEntity);
+      
+      logger.info('Thread creado correctamente', {
+        userId,
+        threadId: newThread.id
+      });
+    }
+
+    return userThread;
   }
 } 

@@ -107,4 +107,11 @@ export class PrismaUserRepository implements UserRepository {
     });
     return count > 0;
   }
+
+  /**
+   * Guarda un usuario (alias para create)
+   */
+  async save(user: User): Promise<User> {
+    return this.create(user);
+  }
 } 
