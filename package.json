@@ -15,7 +15,10 @@
     "format": "prettier --write 'src/**/*.ts'",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "deploy:check": "node scripts/pre-deploy-check.js",
+    "deploy:prepare": "node .railway/prepare.js",
+    "postinstall": "prisma generate"
   },
   "repository": {
     "type": "git",
@@ -47,7 +50,6 @@
     "helmet": "^8.1.0",
     "module-alias": "^2.2.3",
     "node-schedule": "^2.1.1",
-    "openai": "^4.91.1",
     "sharp": "^0.34.0",
     "uuid": "^11.1.0",
     "winston": "^3.8.2",

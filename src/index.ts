@@ -1,14 +1,15 @@
 import * as express from 'express';
+import { PrismaClient } from '@prisma/client';
 import { logger } from '@utils/logger';
 import { configureServer } from '@infrastructure/webserver/server';
-import { env } from '@infrastructure/config/env';
+import { env, config } from '@infrastructure/config/env';
 import { testSupabaseConnection } from '@infrastructure/database/supabase';
-import { UserOnboardingUseCase } from './core/usecases/user/UserOnboardingUseCase';
 import { PrismaRepositoryFactory } from '@infrastructure/database/prisma/PrismaRepositoryFactory';
-import { WhatsAppService } from '@infrastructure/services/WhatsAppService';
-import { OpenAIClient } from '@infrastructure/services/OpenAIClient';
-import { OpenAIAssistantService } from '@infrastructure/services/OpenAIAssistantService';
-import { WebhookController } from '@infrastructure/controllers/WebhookController';
+import { WhatsAppService } from '@infrastructure/services/whatsapp/WhatsAppService';
+import { OpenAIClient } from '@infrastructure/services/openai/OpenAIClient';
+import { OpenAIAssistantService } from '@infrastructure/services/openai/OpenAIAssistantService';
+import { WebhookController } from '@infrastructure/controllers/webhook/WebhookController';
+import { UserOnboardingUseCase } from '@core/usecases/user/UserOnboardingUseCase';
 
 // Inicialización asíncrona de la aplicación
 async function bootstrap() {
@@ -34,11 +35,19 @@ async function bootstrap() {
     configureServer(app);
 
     // Inicializar servicios
+    const prisma = new PrismaClient();
     const repositoryFactory = new PrismaRepositoryFactory(prisma);
-    const whatsAppService = new WhatsAppService();
+    const whatsAppService = new WhatsAppService(config.whatsapp);
     const openAIClient = new OpenAIClient(config.openai.apiKey);
-    const openAIAssistantService = new OpenAIAssistantService(openAIClient, config.openai.assistantId);
-    const userOnboardingUseCase = new UserOnboardingUseCase(repositoryFactory, whatsAppService);
+    const openAIAssistantService = new OpenAIAssistantService(
+      openAIClient, 
+      config.openai.assistantId,
+      prisma
+    );
+    const userOnboardingUseCase = new UserOnboardingUseCase(
+      repositoryFactory.userRepository, 
+      whatsAppService
+    );
 
     // Definir rutas y controladores
     const webHookController = new WebhookController(
@@ -47,6 +56,9 @@ async function bootstrap() {
       repositoryFactory,
       userOnboardingUseCase
     );
+
+    // Registrar rutas del webhook
+    app.use('/api/v1/webhook', webHookController.getRoutes());
 
     // Iniciar el servidor
     app.listen(port, () => {
