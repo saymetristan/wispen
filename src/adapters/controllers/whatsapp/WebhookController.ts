@@ -2,6 +2,20 @@ import { Request, Response } from 'express';
 import { WhatsAppService } from '@infrastructure/services/whatsapp/WhatsAppService';
 import { logger } from '@utils/logger';
 
+// Definición de tipos para el contacto y estado
+interface WhatsAppContact {
+  input: string;
+  wa_id: string;
+  name?: string;
+}
+
+interface WhatsAppStatus {
+  id: string;
+  status: string;
+  timestamp: string;
+  recipient_id: string;
+}
+
 // Importamos la interfaz (añádela aquí o crea un archivo separado para tipos compartidos)
 interface WhatsAppWebhookPayload {
   object: string;
@@ -14,7 +28,7 @@ interface WhatsAppWebhookPayload {
           display_phone_number: string;
           phone_number_id: string;
         };
-        contacts?: Array<any>;
+        contacts?: Array<WhatsAppContact>;
         messages?: Array<{
           from: string;
           id: string;
@@ -24,7 +38,7 @@ interface WhatsAppWebhookPayload {
             body: string;
           };
         }>;
-        statuses?: Array<any>;
+        statuses?: Array<WhatsAppStatus>;
       };
       field: string;
     }>;

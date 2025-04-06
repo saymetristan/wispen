@@ -1,12 +1,8 @@
 import * as express from 'express';
 import { Express, Request, Response } from 'express';
-// Importar correctamente usando require para evitar problemas con las importaciones por defecto
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const helmet = require('helmet');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const cors = require('cors');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const compression = require('compression');
+import helmet from 'helmet';
+import cors from 'cors';
+import compression from 'compression';
 import { logger } from '@utils/logger';
 import { errorHandler, notFoundHandler } from '@utils/errors/errorHandler';
 import { env } from '@infrastructure/config/env';

@@ -9,6 +9,19 @@ export enum TransactionType {
   INCOME = 'income'
 }
 
+// Interfaz para el resultado de toJSON
+export interface TransactionJSON {
+  id: string;
+  userId: string;
+  amount: number;
+  type: TransactionType;
+  description: string;
+  category: string | null;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export class Transaction {
   // Propiedades inmutables
   readonly id: string;
@@ -152,7 +165,7 @@ export class Transaction {
   }
 
   // Método para serializar la entidad
-  toJSON(): Record<string, any> {
+  toJSON(): TransactionJSON {
     return {
       id: this.id,
       userId: this.userId,

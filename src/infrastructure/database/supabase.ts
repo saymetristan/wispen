@@ -16,7 +16,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
 export const testSupabaseConnection = async (): Promise<boolean> => {
   try {
     // Intentar realizar una operación simple para verificar conexión
-    const { data, error } = await supabase.auth.getSession();
+    const { error } = await supabase.auth.getSession();
     
     if (error) {
       logger.error('Error al conectar con Supabase', { error });

@@ -10,7 +10,7 @@ export const errorHandler = (
   err: Error | AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   // Por defecto es un error del servidor
   let statusCode = 500;
@@ -74,8 +74,10 @@ export const notFoundHandler = (
 
 /**
  * Wrapper para funciones asíncronas que evita try/catch en cada controlador
+ * @param fn Función controladora que recibe req, res, next
  */
-export const asyncHandler = (fn: Function) => 
-  (req: Request, res: Response, next: NextFunction): void => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  }; 
+export const asyncHandler = (
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>
+) => (req: Request, res: Response, next: NextFunction): void => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+}; 

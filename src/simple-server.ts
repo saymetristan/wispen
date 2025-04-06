@@ -10,6 +10,7 @@ app.get('/health', (_req, res) => {
 });
 
 // Iniciar el servidor
+// eslint-disable-next-line no-console
 app.listen(port, () => {
   console.log(`Servidor de prueba iniciado en puerto ${port}`);
 }); 

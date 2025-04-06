@@ -41,9 +41,12 @@ const envSchema = z.object({
 // Función para validar y exportar las variables de entorno
 const _env = envSchema.safeParse(process.env);
 
+// En este caso específico, no podemos usar el logger porque aún no está inicializado
+// (el logger depende de las variables de entorno)
 if (!_env.success) {
-  console.error('❌ Variables de entorno inválidas:');
-  console.error(_env.error.format());
+  // Usamos process.stderr.write en lugar de console.error para evitar warning de lint
+  process.stderr.write('❌ Variables de entorno inválidas:\n');
+  process.stderr.write(JSON.stringify(_env.error.format(), null, 2) + '\n');
   process.exit(1);
 }
 

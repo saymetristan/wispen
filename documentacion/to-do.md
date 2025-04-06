@@ -28,10 +28,10 @@
 - [✅] Implementar repositorios básicos para acceso a datos
 
 ### Integración WhatsApp (Semana 2, Días 2-3)
-- [ ] Configurar webhook para recibir mensajes de WhatsApp
-- [ ] Implementar lógica para procesar mensajes entrantes de texto
-- [ ] Crear servicio para enviar respuestas a WhatsApp
-- [ ] Implementar middleware de autenticación para webhook
+- [✅] Configurar webhook para recibir mensajes de WhatsApp
+- [✅] Implementar lógica para procesar mensajes entrantes de texto
+- [✅] Crear servicio para enviar respuestas a WhatsApp
+- [✅] Implementar middleware de autenticación para webhook
 
 ### Integración OpenAI (Semana 2, Días 4-5)
 - [ ] Configurar cliente de OpenAI

@@ -2,6 +2,16 @@
  * Entidad de dominio para Usuario
  * Una entidad es un objeto con una identidad única que persiste a través del tiempo
  */
+
+// Interfaz para el resultado de toJSON
+export interface UserJSON {
+  id: string;
+  phone: string;
+  name: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export class User {
   // Propiedades inmutables
   readonly id: string;
@@ -56,7 +66,7 @@ export class User {
   }
 
   // Método para serializar la entidad
-  toJSON(): Record<string, any> {
+  toJSON(): UserJSON {
     return {
       id: this.id,
       phone: this.phone,

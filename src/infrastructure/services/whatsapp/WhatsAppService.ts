@@ -20,15 +20,29 @@ interface WhatsAppMessage {
   // Otros tipos de mensajes se agregarán según sea necesario
 }
 
+// Definición de tipos para el contacto y estado
+interface WhatsAppContact {
+  input: string;
+  wa_id: string;
+  name?: string;
+}
+
+interface WhatsAppStatus {
+  id: string;
+  status: string;
+  timestamp: string;
+  recipient_id: string;
+}
+
 interface WhatsAppValue {
   messaging_product: string;
   metadata: {
     display_phone_number: string;
     phone_number_id: string;
   };
-  contacts?: Array<any>;
+  contacts?: Array<WhatsAppContact>;
   messages?: Array<WhatsAppMessage>;
-  statuses?: Array<any>;
+  statuses?: Array<WhatsAppStatus>;
 }
 
 interface WhatsAppWebhookPayload {
