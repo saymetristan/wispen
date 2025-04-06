@@ -40,21 +40,21 @@
 - [✅] Configurar instrucciones básicas para el asistente
 
 ### Funcionalidades Core (Semana 3, Días 1-3)
-- [ ] Implementar registro de transacciones por texto
-- [ ] Implementar consulta de saldo
-- [ ] Implementar categorización básica de transacciones
-- [ ] Conectar respuestas de IA con acciones en la base de datos
+- [✅] Implementar registro de transacciones por texto
+- [✅] Implementar consulta de saldo
+- [✅] Implementar categorización básica de transacciones
+- [✅] Conectar respuestas de IA con acciones en la base de datos
 
 ### Reportes Básicos (Semana 3, Días 4-5)
-- [ ] Implementar consulta de transacciones recientes
-- [ ] Implementar reporte de gastos por categoría (simple)
-- [ ] Implementar reporte de balance mensual
+- [✅] Implementar consulta de transacciones recientes
+- [✅] Implementar reporte de gastos por categoría (simple)
+- [✅] Implementar reporte de balance mensual
 
 ### Onboarding y Pruebas (Semana 4, Días 1-3)
-- [ ] Implementar flujo de onboarding para nuevos usuarios
-- [ ] Crear mensajes de bienvenida y guía inicial
-- [ ] Implementar lógica para manejar estado de onboarding
-- [ ] Realizar pruebas integrales del MVP
+- [✅] Implementar flujo de onboarding para nuevos usuarios
+- [✅] Crear mensajes de bienvenida y guía inicial
+- [✅] Implementar lógica para manejar estado de onboarding
+- [✅] Realizar pruebas integrales del MVP
 
 ### Refinamiento MVP (Semana 4, Días 4-5)
 - [ ] Realizar pruebas con usuarios reales

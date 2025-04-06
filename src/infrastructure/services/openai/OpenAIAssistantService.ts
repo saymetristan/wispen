@@ -1,13 +1,13 @@
 import OpenAI from 'openai';
 import { OpenAIClient } from './OpenAIClient';
-import { logger } from '@utils/logger';
-import { env } from '@infrastructure/config/env';
+import { logger } from '../../../utils/logger';
 import { AsyncLocalStorage } from 'async_hooks';
-import { ThreadRepository } from '@core/domain/repositories/ThreadRepository';
-import { RepositoryFactory } from '@infrastructure/database/RepositoryFactory';
-import { OpenAIToolHandler } from './OpenAIToolHandler';
-import { Thread } from '@core/domain/openai/Thread';
+import { ThreadRepository } from '../../../core/domain/repositories/ThreadRepository';
+import { OpenAIToolHandler } from './tools/OpenAIToolHandler';
+import { Thread } from '../../../core/domain/openai/Thread';
 import { RunStatus } from 'openai/resources/beta/threads/runs/runs';
+import { PrismaThreadRepository } from '../../../adapters/repositories/PrismaThreadRepository';
+import { PrismaClient } from '@prisma/client';
 
 const asyncLocalStorage = new AsyncLocalStorage<string>();
 
@@ -20,15 +20,27 @@ export class OpenAIAssistantService {
   private threadRepository: ThreadRepository;
   private toolHandler: OpenAIToolHandler;
 
-  constructor() {
-    this.openai = OpenAIClient.getInstance();
-    this.threadRepository = RepositoryFactory.getThreadRepository();
+  constructor(
+    openAIClient: OpenAIClient,
+    assistantId: string | null = null,
+    prismaClient: PrismaClient
+  ) {
+    // Inicializar el cliente de OpenAI
+    this.openai = openAIClient.getClient();
+    
+    // Establecer ID del asistente si se proporciona
+    this.assistantId = assistantId;
+    
+    // Obtener el repositorio de threads mediante inyección
+    this.threadRepository = new PrismaThreadRepository(prismaClient);
+    
+    // Inicializar el manejador de herramientas
     this.toolHandler = new OpenAIToolHandler();
   }
 
   /**
    * Obtiene el ID del asistente configurado
-   * El asistente ya ha sido creado en la plataforma de OpenAI con ID: asst_x1lJ9EZEPu3vlJVGoKRcgQV1
+   * El asistente ya ha sido creado en la plataforma de OpenAI
    * y está configurado en las variables de entorno
    * Solo como fallback, si no existe el ID, crearía uno nuevo
    */
@@ -39,9 +51,9 @@ export class OpenAIAssistantService {
 
     try {
       // Usar el asistente configurado en las variables de entorno (escenario principal)
-      if (env.OPENAI_ASSISTANT_ID) {
+      if (process.env.OPENAI_ASSISTANT_ID) {
         // Verificar que el asistente existe
-        const assistant = await this.openai.beta.assistants.retrieve(env.OPENAI_ASSISTANT_ID);
+        const assistant = await this.openai.beta.assistants.retrieve(process.env.OPENAI_ASSISTANT_ID);
         this.assistantId = assistant.id;
         logger.info('Asistente de OpenAI recuperado correctamente', { assistantId: this.assistantId });
         return this.assistantId;
@@ -67,33 +79,6 @@ export class OpenAIAssistantService {
         error: (error as Error).message,
       });
       throw new Error('No se pudo obtener o crear el asistente de OpenAI');
-    }
-  }
-
-  /**
-   * Crea un nuevo hilo de conversación en OpenAI
-   */
-  async createThread(userId: string): Promise<Thread> {
-    try {
-      const response = await this.openai.beta.threads.create({
-        metadata: {
-          userId: userId
-        }
-      });
-
-      return new Thread(
-        response.id,
-        userId,
-        response.metadata as Record<string, string>,
-        new Date(response.created_at * 1000),
-        new Date(response.created_at * 1000)
-      );
-    } catch (error) {
-      logger.error('Error al crear thread en OpenAI', {
-        error: (error as Error).message,
-        userId,
-      });
-      throw new Error('No se pudo crear el thread en OpenAI');
     }
   }
 
@@ -237,7 +222,7 @@ export class OpenAIAssistantService {
     try {
       // Buscar o crear el thread para este usuario
       const userThread = await this.findOrCreateThread(userId);
-      const threadId = userThread.id;
+      const threadId = userThread.threadId;
 
       logger.info('Procesando mensaje de usuario', {
         userId,
@@ -369,7 +354,7 @@ export class OpenAIAssistantService {
   /**
    * Busca o crea un thread para el usuario
    */
-  private async findOrCreateThread(userId: string) {
+  async findOrCreateThread(userId: string) {
     // Buscar el thread en la base de datos
     let userThread = await this.threadRepository.findByUserId(userId);
 
@@ -388,9 +373,8 @@ export class OpenAIAssistantService {
       const threadEntity = new Thread(
         newThread.id,
         userId,
-        { created_by: 'openai_assistant' },
-        new Date(),
-        new Date()
+        newThread.id,
+        { created_by: 'openai_assistant' }
       );
       
       // Guardar en la base de datos
@@ -403,5 +387,52 @@ export class OpenAIAssistantService {
     }
 
     return userThread;
+  }
+
+  /**
+   * Envía un mensaje al asistente y obtiene la respuesta
+   */
+  async sendMessage(threadId: string, content: string): Promise<string> {
+    try {
+      logger.info('Enviando mensaje al asistente', { threadId, contentLength: content.length });
+      
+      // Agregar el mensaje al thread
+      await this.addMessageToThread(threadId, content);
+      
+      // Ejecutar el asistente
+      const response = await this.runAssistant(threadId);
+      
+      logger.info('Respuesta del asistente obtenida', { threadId, responseLength: response.length });
+      
+      return response;
+    } catch (error) {
+      logger.error('Error al enviar mensaje al asistente', {
+        error: (error as Error).message,
+        threadId
+      });
+      throw new Error('No se pudo procesar el mensaje');
+    }
+  }
+
+  /**
+   * Crea un nuevo thread en OpenAI y devuelve su ID
+   */
+  async createThread(): Promise<string> {
+    try {
+      await this.getOrCreateAssistant();
+      
+      logger.info('Creando nuevo thread en OpenAI');
+      
+      const thread = await this.openai.beta.threads.create();
+      
+      logger.info('Thread creado correctamente', { threadId: thread.id });
+      
+      return thread.id;
+    } catch (error) {
+      logger.error('Error al crear thread', {
+        error: (error as Error).message
+      });
+      throw new Error('No se pudo crear el thread');
+    }
   }
 } 

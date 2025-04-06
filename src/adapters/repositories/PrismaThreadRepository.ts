@@ -1,15 +1,17 @@
 import { Thread } from '../../core/domain/openai/Thread';
 import { ThreadRepository } from '../../core/domain/repositories/ThreadRepository';
-import prisma from '../../infrastructure/database/prisma';
+import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '@utils/logger';
+import { logger } from '../../utils/logger';
 
 /**
  * Implementación del repositorio de threads usando Prisma
  */
 export class PrismaThreadRepository implements ThreadRepository {
-  constructor() {
-    // No debe tener dependencia con OpenAIAssistantService
+  private prisma: PrismaClient;
+
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
   }
 
   /**
@@ -17,8 +19,8 @@ export class PrismaThreadRepository implements ThreadRepository {
    */
   async findById(id: string): Promise<Thread | null> {
     try {
-      const thread = await prisma.thread.findUnique({
-        where: { id },
+      const thread = await this.prisma.thread.findUnique({
+        where: { id }
       });
 
       if (!thread) return null;
@@ -26,9 +28,8 @@ export class PrismaThreadRepository implements ThreadRepository {
       return new Thread(
         thread.id,
         thread.userId,
-        thread.metadata ? (thread.metadata as Record<string, string>) : {},
-        thread.createdAt,
-        thread.updatedAt
+        thread.threadId,
+        thread.metadata as Record<string, any> || {}
       );
     } catch (error) {
       logger.error('Error al buscar thread por ID', {
@@ -40,26 +41,25 @@ export class PrismaThreadRepository implements ThreadRepository {
   }
 
   /**
-   * Busca threads por ID de usuario
+   * Busca un thread por el ID del usuario
    */
   async findByUserId(userId: string): Promise<Thread | null> {
     try {
-      const thread = await prisma.thread.findFirst({
+      const thread = await this.prisma.thread.findFirst({
         where: { userId },
         orderBy: { createdAt: 'desc' },
       });
-      
+
       if (!thread) return null;
 
       return new Thread(
         thread.id,
         thread.userId,
-        thread.metadata ? (thread.metadata as Record<string, string>) : {},
-        thread.createdAt,
-        thread.updatedAt
+        thread.threadId,
+        thread.metadata as Record<string, any> || {}
       );
     } catch (error) {
-      logger.error('Error al buscar threads por userId', {
+      logger.error('Error al buscar thread por ID de usuario', {
         error: (error as Error).message,
         userId
       });
@@ -68,30 +68,29 @@ export class PrismaThreadRepository implements ThreadRepository {
   }
 
   /**
-   * Guarda un thread en la base de datos (útil para cuando se recibe un objeto simple)
+   * Crea o actualiza un thread
    */
   async save(data: any): Promise<Thread> {
     try {
-      const thread = await prisma.thread.create({
+      const thread = await this.prisma.thread.create({
         data: {
           id: data.id || uuidv4(),
           userId: data.userId,
+          threadId: data.threadId,
           metadata: data.metadata || {},
-          // Las fechas se asignarán automáticamente en la BD
-        },
+        }
       });
 
       return new Thread(
         thread.id,
         thread.userId,
-        thread.metadata ? (thread.metadata as Record<string, string>) : {},
-        thread.createdAt,
-        thread.updatedAt
+        thread.threadId,
+        thread.metadata as Record<string, any> || {}
       );
     } catch (error) {
       logger.error('Error al guardar thread', {
         error: (error as Error).message,
-        userId: data.userId
+        data
       });
       throw error;
     }
@@ -102,26 +101,25 @@ export class PrismaThreadRepository implements ThreadRepository {
    */
   async create(thread: Thread): Promise<Thread> {
     try {
-      const createdThread = await prisma.thread.create({
+      const createdThread = await this.prisma.thread.create({
         data: {
           id: thread.id,
           userId: thread.userId,
+          threadId: thread.threadId,
           metadata: thread.metadata || {},
-        },
+        }
       });
 
       return new Thread(
         createdThread.id,
         createdThread.userId,
-        createdThread.metadata ? (createdThread.metadata as Record<string, string>) : {},
-        createdThread.createdAt,
-        createdThread.updatedAt
+        createdThread.threadId,
+        createdThread.metadata as Record<string, any> || {}
       );
     } catch (error) {
       logger.error('Error al crear thread', {
         error: (error as Error).message,
-        threadId: thread.id,
-        userId: thread.userId
+        threadData: { id: thread.id, userId: thread.userId }
       });
       throw error;
     }
@@ -131,19 +129,19 @@ export class PrismaThreadRepository implements ThreadRepository {
    * Actualiza un thread existente
    */
   async update(thread: Thread): Promise<Thread> {
-    const updatedThread = await prisma.thread.update({
+    const updatedThread = await this.prisma.thread.update({
       where: { id: thread.id },
       data: {
+        threadId: thread.threadId,
         metadata: thread.metadata,
-      },
+      }
     });
 
     return new Thread(
       updatedThread.id,
       updatedThread.userId,
-      updatedThread.metadata ? JSON.parse(JSON.stringify(updatedThread.metadata)) : {},
-      updatedThread.createdAt,
-      updatedThread.updatedAt
+      updatedThread.threadId,
+      updatedThread.metadata as Record<string, any> || {}
     );
   }
 
@@ -151,51 +149,40 @@ export class PrismaThreadRepository implements ThreadRepository {
    * Elimina un thread por su ID
    */
   async delete(id: string): Promise<void> {
-    await prisma.thread.delete({
+    await this.prisma.thread.delete({
       where: { id },
     });
   }
 
   /**
-   * Encuentra un thread por userId o crea uno nuevo si no existe
+   * Busca o crea un thread para un usuario
    */
   async findOrCreateByUserId(userId: string): Promise<Thread> {
-    try {
-      // Buscar el thread existente
-      const existingThread = await this.findByUserId(userId);
-      
-      // Si existe, devolverlo
-      if (existingThread) {
-        return existingThread;
-      }
-      
-      // Si no existe, crear uno nuevo con un ID generado
-      const threadId = uuidv4();
-      
-      // Crear el thread en la base de datos
-      const newThread = new Thread(
-        threadId,
-        userId,
-        { created_by: 'local_system' },
-        new Date(),
-        new Date()
-      );
-      
-      return await this.create(newThread);
-    } catch (error) {
-      logger.error('Error en findOrCreateByUserId', {
-        error: (error as Error).message,
-        userId
-      });
-      throw error;
+    const existingThread = await this.findByUserId(userId);
+    
+    if (existingThread) {
+      return existingThread;
     }
+    
+    // Si no existe, crear un nuevo thread
+    logger.info('Creando nuevo thread para usuario', { userId });
+    
+    // El ID del thread de OpenAI se debe generar en otro lugar
+    const newThreadData = {
+      id: uuidv4(),
+      userId,
+      threadId: `thread_placeholder_${Date.now()}`, // Placeholder, debe ser reemplazado
+      metadata: {}
+    };
+    
+    return this.save(newThreadData);
   }
 
   /**
-   * Busca el thread más reciente para un usuario
+   * Encuentra el último thread de un usuario
    */
   async findLatestByUserId(userId: string): Promise<Thread | null> {
-    const thread = await prisma.thread.findFirst({
+    const thread = await this.prisma.thread.findFirst({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
@@ -205,9 +192,22 @@ export class PrismaThreadRepository implements ThreadRepository {
     return new Thread(
       thread.id,
       thread.userId,
-      thread.metadata ? JSON.parse(JSON.stringify(thread.metadata)) : {},
-      thread.createdAt,
-      thread.updatedAt
+      thread.threadId,
+      thread.metadata as Record<string, any> || {}
     );
+  }
+
+  /**
+   * Alias para findByUserId para compatibilidad
+   */
+  async getThreadByUserId(userId: string): Promise<Thread | null> {
+    return this.findByUserId(userId);
+  }
+
+  /**
+   * Alias para create para compatibilidad
+   */
+  async createThread(thread: Thread): Promise<Thread> {
+    return this.create(thread);
   }
 } 

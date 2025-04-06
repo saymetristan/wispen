@@ -6,7 +6,8 @@
 export interface ThreadJSON {
   id: string;
   userId: string;
-  metadata?: Record<string, string>;
+  threadId: string;
+  metadata?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,33 +16,37 @@ export class Thread {
   // Propiedades inmutables
   readonly id: string;
   readonly userId: string;
+  readonly threadId: string;
   
   // Propiedades que pueden ser modificadas
-  private _metadata: Record<string, string>;
+  private _metadata: Record<string, any>;
   private _createdAt: Date;
   private _updatedAt: Date;
 
   constructor(
     id: string,
     userId: string,
-    metadata: Record<string, string> = {},
+    threadId: string,
+    metadata: Record<string, any> = {},
     createdAt: Date = new Date(),
     updatedAt: Date = new Date()
   ) {
     // Validaciones básicas
     if (!id) throw new Error('El ID del thread es requerido');
     if (!userId) throw new Error('El ID del usuario es requerido');
+    if (!threadId) throw new Error('El ID del hilo es requerido');
     
     // Asignación de propiedades
     this.id = id;
     this.userId = userId;
+    this.threadId = threadId;
     this._metadata = metadata;
     this._createdAt = createdAt;
     this._updatedAt = updatedAt;
   }
 
   // Getters
-  get metadata(): Record<string, string> {
+  get metadata(): Record<string, any> {
     return { ...this._metadata };
   }
 
@@ -54,13 +59,13 @@ export class Thread {
   }
 
   // Setters (con validación)
-  set metadata(value: Record<string, string>) {
+  set metadata(value: Record<string, any>) {
     this._metadata = { ...value };
     this._updatedAt = new Date();
   }
 
   // Métodos de dominio
-  addMetadata(key: string, value: string): void {
+  addMetadata(key: string, value: any): void {
     this._metadata[key] = value;
     this._updatedAt = new Date();
   }
@@ -70,6 +75,7 @@ export class Thread {
     return {
       id: this.id,
       userId: this.userId,
+      threadId: this.threadId,
       metadata: this._metadata,
       createdAt: this._createdAt.toISOString(),
       updatedAt: this._updatedAt.toISOString(),

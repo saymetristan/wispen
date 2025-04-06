@@ -1,8 +1,7 @@
 import * as winston from 'winston';
-import { env } from '@infrastructure/config/env';
+import * as fs from 'fs';
 import * as path from 'path';
 import { Request, Response, NextFunction } from 'express';
-import * as fs from 'fs';
 
 // Crear directorio de logs si no existe
 const logsDir = path.join(process.cwd(), 'logs');
@@ -10,43 +9,39 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
-// Configuración del formato
+// Formato para todos los logs
 const logFormat = winston.format.combine(
-  winston.format.timestamp({
-    format: 'YYYY-MM-DD HH:mm:ss'
-  }),
-  winston.format.errors({ stack: true }),
-  winston.format.splat(),
-  winston.format.json()
+  winston.format.timestamp(),
+  winston.format.printf((info: winston.Logform.TransformableInfo) => {
+    const { timestamp, level, message, ...meta } = info;
+    return `${timestamp} [${level.toUpperCase()}]: ${message} ${
+      Object.keys(meta).length ? JSON.stringify(meta) : ''
+    }`;
+  })
 );
 
-// Configuración de Winston
+// Crear el logger
 export const logger = winston.createLogger({
-  level: env.LOG_LEVEL,
+  level: process.env.LOG_LEVEL || 'info',
   format: logFormat,
-  defaultMeta: { service: 'wispen-api' },
   transports: [
-    // Archivo para todos los logs
-    new winston.transports.File({ 
-      filename: path.join(logsDir, 'combined.log') 
+    // Escribir todos los logs a la consola
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        logFormat
+      )
     }),
-    // Archivo específico para errores
-    new winston.transports.File({ 
-      filename: path.join(logsDir, 'errors.log'),
-      level: 'error' 
+    // Escribir logs de error a un archivo
+    new winston.transports.File({
+      filename: path.join(logsDir, 'error.log'),
+      level: 'error'
     }),
-    // Consola en desarrollo
-    ...(env.NODE_ENV !== 'production'
-      ? [
-          new winston.transports.Console({
-            format: winston.format.combine(
-              winston.format.colorize(),
-              winston.format.simple()
-            ),
-          }),
-        ]
-      : []),
-  ],
+    // Escribir todos los logs a un archivo
+    new winston.transports.File({
+      filename: path.join(logsDir, 'combined.log')
+    })
+  ]
 });
 
 // Crear middleware de logging para Express

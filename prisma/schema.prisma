@@ -16,6 +16,8 @@ model User {
   id            String        @id @default(uuid())
   phone         String        @unique
   name          String?
+  email         String?
+  metadata      Json?         // Metadatos para estado de onboarding y otros
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   transactions  Transaction[]
@@ -39,6 +41,7 @@ model Transaction {
 model Thread {
   id          String    @id
   userId      String
+  threadId    String    // ID del thread en OpenAI
   metadata    Json?     // Almacena metadata como JSON
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

@@ -10,6 +10,7 @@ export interface UserJSON {
   name: string | null;
   createdAt: string;
   updatedAt: string;
+  metadata?: Record<string, any>;
 }
 
 export class User {
@@ -21,13 +22,15 @@ export class User {
   private _name: string | null;
   private _createdAt: Date;
   private _updatedAt: Date;
+  private _metadata: Record<string, any>;
 
   constructor(
     id: string,
     phone: string,
     name: string | null = null,
     createdAt: Date = new Date(),
-    updatedAt: Date = new Date()
+    updatedAt: Date = new Date(),
+    metadata: Record<string, any> = {}
   ) {
     // Validaciones básicas
     if (!id) throw new Error('El ID del usuario es requerido');
@@ -39,6 +42,7 @@ export class User {
     this._name = name;
     this._createdAt = createdAt;
     this._updatedAt = updatedAt;
+    this._metadata = metadata;
   }
 
   // Getters
@@ -54,6 +58,10 @@ export class User {
     return new Date(this._updatedAt);
   }
 
+  get metadata(): Record<string, any> {
+    return {...this._metadata};
+  }
+
   // Setters (con validación)
   set name(value: string | null) {
     this._name = value;
@@ -65,6 +73,25 @@ export class User {
     this.name = name;
   }
 
+  /**
+   * Actualiza los metadatos del usuario
+   * @param metadata Nuevos metadatos a establecer
+   */
+  updateMetadata(metadata: Record<string, any>): void {
+    this._metadata = {...metadata};
+    this._updatedAt = new Date();
+  }
+
+  /**
+   * Añade o actualiza una clave específica en los metadatos
+   * @param key Clave a actualizar
+   * @param value Nuevo valor
+   */
+  setMetadataValue(key: string, value: any): void {
+    this._metadata[key] = value;
+    this._updatedAt = new Date();
+  }
+
   // Método para serializar la entidad
   toJSON(): UserJSON {
     return {
@@ -73,6 +100,7 @@ export class User {
       name: this._name,
       createdAt: this._createdAt.toISOString(),
       updatedAt: this._updatedAt.toISOString(),
+      metadata: this._metadata
     };
   }
 } 
