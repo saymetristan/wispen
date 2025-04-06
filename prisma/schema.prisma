@@ -25,6 +25,7 @@ model Transaction {
   id          String    @id @default(uuid())
   userId      String
   amount      Float
+  type        String    @default("expense")
   description String
   category    String?
   date        DateTime  @default(now())
