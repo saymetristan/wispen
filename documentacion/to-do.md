@@ -14,18 +14,18 @@
 ## Fase 1: MVP (Semanas 1-4)
 
 ### Configuración Básica (Semana 1, Días 3-5)
-- [ ] Implementar estructura de carpetas según Clean Architecture
-- [ ] Configurar Express.js con middleware esenciales
-- [ ] Configurar conexión a Supabase
-- [ ] Configurar Winston para logging
-- [ ] Implementar sistema básico de manejo de errores
+- [✅] Implementar estructura de carpetas según Clean Architecture
+- [✅] Configurar Express.js con middleware esenciales
+- [✅] Configurar conexión a Supabase
+- [✅] Configurar Winston para logging
+- [✅] Implementar sistema básico de manejo de errores
 
 ### Modelado de Datos (Semana 1, Día 5 - Semana 2, Día 1)
-- [ ] Diseñar e implementar modelo User (básico)
-- [ ] Diseñar e implementar modelo Transaction (básico)
-- [ ] Configurar Prisma y generar el cliente
-- [ ] Crear migraciones iniciales de la base de datos
-- [ ] Implementar repositorios básicos para acceso a datos
+- [✅] Diseñar e implementar modelo User (básico)
+- [✅] Diseñar e implementar modelo Transaction (básico)
+- [✅] Configurar Prisma y generar el cliente
+- [✅] Crear migraciones iniciales de la base de datos
+- [✅] Implementar repositorios básicos para acceso a datos
 
 ### Integración WhatsApp (Semana 2, Días 2-3)
 - [ ] Configurar webhook para recibir mensajes de WhatsApp

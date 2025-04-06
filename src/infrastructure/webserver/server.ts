@@ -10,6 +10,7 @@ const compression = require('compression');
 import { logger } from '@utils/logger';
 import { errorHandler, notFoundHandler } from '@utils/errors/errorHandler';
 import { env } from '@infrastructure/config/env';
+import apiRoutes from '@adapters/routes';
 
 // Middleware de logging simple para HTTP requests
 const httpLogger = (req: Request, res: Response, next: express.NextFunction): void => {
@@ -56,8 +57,8 @@ export const configureServer = (app: Express): void => {
     });
   });
 
-  // Aquí se registrarán las rutas de la API
-  // app.use('/api/v1', apiRoutes);
+  // Registrar las rutas de la API
+  app.use('/api/v1', apiRoutes);
 
   // Manejo de rutas no encontradas (404)
   app.use(notFoundHandler);

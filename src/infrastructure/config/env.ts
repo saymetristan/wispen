@@ -28,11 +28,11 @@ const envSchema = z.object({
   // WhatsApp Business API
   WHATSAPP_API_URL: z.string().default('https://graph.facebook.com'),
   WHATSAPP_API_VERSION: z.string(),
-  WHATSAPP_APP_SECRET: z.string(),
   WHATSAPP_ACCESS_TOKEN: z.string(),
   WHATSAPP_PHONE_NUMBER_ID: z.string(),
   WHATSAPP_BUSINESS_ACCOUNT_ID: z.string(),
   WHATSAPP_WEBHOOK_VERIFY_TOKEN: z.string(),
+  WHATSAPP_APP_SECRET: z.string().optional(),
   
   // Logging
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']).default('info'),
