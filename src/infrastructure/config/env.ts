@@ -21,6 +21,7 @@ const envSchema = z.object({
   
   // OpenAI
   OPENAI_API_KEY: z.string(),
+  OPENAI_ASSISTANT_ID: z.string().optional(),
   
   // Mistral AI
   MISTRAL_API_KEY: z.string(),

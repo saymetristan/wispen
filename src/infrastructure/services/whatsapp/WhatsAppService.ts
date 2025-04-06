@@ -1,6 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 import { logger } from '@utils/logger';
 import { env } from '@infrastructure/config/env';
+import { ProcessWhatsAppMessage } from '@core/usecases/ProcessWhatsAppMessage';
 
 // Interfaces para tipado
 interface WhatsAppMessageResponse {
@@ -164,17 +165,18 @@ export class WhatsAppService {
       const message = value.messages[0];
       const from = message.from;
       const messageId = message.id;
-      // Registrar el timestamp pero no lo usamos por ahora
-      logger.debug('Timestamp del mensaje', { timestamp: message.timestamp });
 
       // Procesar según el tipo de mensaje
       if (message.type === 'text' && message.text) {
         const text = message.text.body;
         logger.info('Mensaje de texto recibido', { from, messageId, text });
         
-        // Aquí se procesará el mensaje usando los casos de uso
-        // Por ahora solo enviamos una respuesta simple
-        await this.sendTextMessage(from, `Recibido: ${text}`);
+        // Usar el caso de uso para procesar el mensaje
+        const processMessage = new ProcessWhatsAppMessage();
+        const response = await processMessage.execute(from, text);
+        
+        // Enviar respuesta al usuario
+        await this.sendTextMessage(from, response);
       } else {
         logger.info('Mensaje no soportado recibido', { from, messageId, type: message.type });
         await this.sendTextMessage(from, 'Tipo de mensaje no soportado aún.');
@@ -189,4 +191,4 @@ export class WhatsAppService {
       return false;
     }
   }
-} 
+}

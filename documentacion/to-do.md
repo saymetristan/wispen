@@ -34,10 +34,10 @@
 - [✅] Implementar middleware de autenticación para webhook
 
 ### Integración OpenAI (Semana 2, Días 4-5)
-- [ ] Configurar cliente de OpenAI
-- [ ] Implementar servicio para gestión de Threads
-- [ ] Implementar lógica para procesar mensajes con Assistants API
-- [ ] Configurar instrucciones básicas para el asistente
+- [✅] Configurar cliente de OpenAI
+- [✅] Implementar servicio para gestión de Threads
+- [✅] Implementar lógica para procesar mensajes con Assistants API
+- [✅] Configurar instrucciones básicas para el asistente
 
 ### Funcionalidades Core (Semana 3, Días 1-3)
 - [ ] Implementar registro de transacciones por texto
