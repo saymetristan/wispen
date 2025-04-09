@@ -3,6 +3,7 @@ import { logger } from '@utils/logger';
 import prisma from '../../database/prisma';
 import { OpenAIClient } from '../openai/OpenAIClient';
 import { OpenAIAssistantService } from '../openai/OpenAIAssistantService';
+import { RepositoryFactory, PrismaRepositoryFactoryImpl } from '@infrastructure/database/RepositoryFactory';
 
 // Interfaces para tipado
 export interface WhatsAppMessageResponse {
@@ -83,28 +84,33 @@ export class WhatsAppService {
   private apiUrl: string;
   private phoneNumberId: string;
   private accessToken: string;
+  private repositoryFactory: RepositoryFactory;
 
-  constructor(config: WhatsAppConfig) {
+  constructor(
+    config: WhatsAppConfig,
+    repositoryFactory: RepositoryFactory = new PrismaRepositoryFactoryImpl()
+  ) {
     this.apiUrl = `${config.apiUrl}/${config.apiVersion}/${config.phoneNumberId}`;
     this.phoneNumberId = config.phoneNumberId;
     this.accessToken = config.accessToken;
+    this.repositoryFactory = repositoryFactory;
   }
 
   /**
-   * Envía un mensaje de texto simple
-   * @param to Número de teléfono del destinatario
-   * @param text Texto del mensaje
+   * Envía un mensaje de texto a un número de teléfono
+   * @param phoneNumber Número de teléfono del destinatario
+   * @param message Mensaje a enviar
    */
-  async sendText(to: string, text: string): Promise<boolean> {
+  async sendText(phoneNumber: string, message: string): Promise<boolean> {
     try {
       const response = await axios.post(
         `${this.apiUrl}/messages`,
         {
           messaging_product: 'whatsapp',
           recipient_type: 'individual',
-          to,
+          to: this.formatPhoneNumber(phoneNumber),
           type: 'text',
-          text: { body: text }
+          text: { body: message }
         },
         {
           headers: {
@@ -115,7 +121,7 @@ export class WhatsAppService {
       );
 
       logger.info('Mensaje enviado correctamente', {
-        to,
+        to: phoneNumber,
         messageId: response.data?.messages?.[0]?.id
       });
 
@@ -123,7 +129,7 @@ export class WhatsAppService {
     } catch (error) {
       logger.error('Error al enviar mensaje', {
         error: error instanceof Error ? error.message : String(error),
-        to
+        to: phoneNumber
       });
       return false;
     }
@@ -211,7 +217,7 @@ export class WhatsAppService {
       });
       
       // Inicializar servicios
-      const openAIClient = new OpenAIClient();
+      const openAIClient = new OpenAIClient(process.env.OPENAI_API_KEY || '');
       const openAIAssistantService = new OpenAIAssistantService(
         openAIClient,
         process.env.OPENAI_ASSISTANT_ID || '',

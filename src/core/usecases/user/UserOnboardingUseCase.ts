@@ -41,10 +41,10 @@ export class UserOnboardingUseCase {
    * Constructor
    */
   constructor(
-    repositoryFactory: RepositoryFactory,
+    userRepository: UserRepository,
     whatsAppService: WhatsAppService
   ) {
-    this.userRepository = repositoryFactory.createUserRepository();
+    this.userRepository = userRepository;
     this.whatsAppService = whatsAppService;
   }
 
@@ -68,7 +68,7 @@ export class UserOnboardingUseCase {
       });
 
       // Enviar mensaje de bienvenida
-      await this.whatsAppService.sendTextMessage(user.phone, this.WELCOME_MESSAGE);
+      await this.whatsAppService.sendText(user.phone, this.WELCOME_MESSAGE);
       
       // Programar envío del mensaje de creación de perfil (15 segundos después)
       setTimeout(() => {
@@ -117,7 +117,7 @@ export class UserOnboardingUseCase {
       });
 
       // Enviar mensaje
-      await this.whatsAppService.sendTextMessage(user.phone, this.PROFILE_CREATION_MESSAGE(user.phone));
+      await this.whatsAppService.sendText(user.phone, this.PROFILE_CREATION_MESSAGE(user.phone));
       
       // Programar finalización del onboarding (30 segundos después)
       setTimeout(() => {
@@ -164,7 +164,7 @@ export class UserOnboardingUseCase {
       });
 
       // Enviar mensaje final
-      await this.whatsAppService.sendTextMessage(user.phone, this.COMPLETION_MESSAGE);
+      await this.whatsAppService.sendText(user.phone, this.COMPLETION_MESSAGE);
 
       logger.info('Onboarding completado exitosamente', { userId: user.id });
     } catch (error) {

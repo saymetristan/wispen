@@ -88,7 +88,7 @@ export class ProcessWhatsAppMessage {
       const assistantResponse = await this.openAIAssistantService.sendMessage(thread.threadId, message);
 
       // Enviar respuesta de vuelta a WhatsApp
-      await this.whatsAppService.sendTextMessage(formattedPhoneNumber, assistantResponse);
+      await this.whatsAppService.sendText(formattedPhoneNumber, assistantResponse);
 
       logger.info('Mensaje procesado correctamente', {
         userId: user.id,
@@ -109,7 +109,7 @@ export class ProcessWhatsAppMessage {
       // Intentar enviar mensaje de error al usuario
       try {
         const formattedPhone = this.formatPhoneNumber(phoneNumber);
-        await this.whatsAppService.sendTextMessage(
+        await this.whatsAppService.sendText(
           formattedPhone,
           'Lo siento, tuve un problema al procesar tu mensaje. Por favor, intenta de nuevo más tarde.'
         );
@@ -178,7 +178,7 @@ export class ProcessWhatsAppMessage {
         
         const newThread = new Thread(
           uuidv4(),
-          user.id,
+          user.threadId,
           threadId,
           { created_by: 'process_whatsapp_message' }
         );

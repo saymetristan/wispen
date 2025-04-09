@@ -1,9 +1,11 @@
-import { UserRepository } from '@core/repositories/UserRepository';
+import { UserRepository } from '@core/domain/repositories/UserRepository';
 import { TransactionRepository } from '../../core/domain/repositories/TransactionRepository';
-import { ThreadRepository } from '@core/repositories/ThreadRepository';
-import { PrismaUserRepository } from '../../adapters/repositories/PrismaUserRepository';
+import { ThreadRepository } from '@core/domain/repositories/ThreadRepository';
+import { PrismaUserRepository } from '@adapters/repositories/PrismaUserRepository';
 import { PrismaTransactionRepository } from '../../adapters/repositories/PrismaTransactionRepository';
-import { PrismaThreadRepository } from '../../adapters/repositories/PrismaThreadRepository';
+import { PrismaThreadRepository } from '@adapters/repositories/PrismaThreadRepository';
+import { PrismaClient } from '@prisma/client';
+import { RepositoryFactory as DomainRepositoryFactory } from '@core/domain/factories/RepositoryFactory';
 
 /**
  * Interfaz abstracta para la fábrica de repositorios
@@ -27,75 +29,45 @@ export interface RepositoryFactory {
 }
 
 /**
- * Factory para crear instancias de repositorios
- * Implementa el principio de inversión de dependencias permitiendo
- * inyectar implementaciones concretas de los repositorios
+ * Implementación de la fábrica de repositorios usando Prisma
  */
-export class RepositoryFactoryImpl implements RepositoryFactory {
-  private static userRepository: UserRepository | null = null;
-  private static transactionRepository: TransactionRepository | null = null;
-  private static threadRepository: ThreadRepository | null = null;
+export class PrismaRepositoryFactoryImpl implements DomainRepositoryFactory, RepositoryFactory {
+  private _userRepository: UserRepository | null = null;
+  private _threadRepository: ThreadRepository | null = null;
+  private prisma: PrismaClient;
 
-  /**
-   * Obtiene una instancia del repositorio de usuarios
-   */
-  static getUserRepository(): UserRepository {
-    if (!this.userRepository) {
-      this.userRepository = new PrismaUserRepository();
+  constructor(prismaClient?: PrismaClient) {
+    this.prisma = prismaClient || new PrismaClient();
+  }
+
+  // Implementación para la interfaz de la infraestructura
+  get userRepository(): UserRepository {
+    return this.createUserRepository();
+  }
+
+  get threadRepository(): ThreadRepository {
+    return this.createThreadRepository();
+  }
+
+  // Implementación para la interfaz del dominio
+  createUserRepository(): UserRepository {
+    if (!this._userRepository) {
+      this._userRepository = new PrismaUserRepository(this.prisma);
     }
-    return this.userRepository;
+    return this._userRepository;
   }
 
-  /**
-   * Obtiene una instancia del repositorio de transacciones
-   */
-  static getTransactionRepository(): TransactionRepository {
-    if (!this.transactionRepository) {
-      this.transactionRepository = new PrismaTransactionRepository();
+  createThreadRepository(): ThreadRepository {
+    if (!this._threadRepository) {
+      this._threadRepository = new PrismaThreadRepository(this.prisma);
     }
-    return this.transactionRepository;
+    return this._threadRepository;
   }
 
   /**
-   * Obtiene una instancia del repositorio de threads
+   * Cierra la conexión a la base de datos
    */
-  static getThreadRepository(): ThreadRepository {
-    if (!this.threadRepository) {
-      this.threadRepository = new PrismaThreadRepository();
-    }
-    return this.threadRepository;
-  }
-
-  /**
-   * Método para establecer un repositorio de usuarios de prueba (útil para tests)
-   */
-  static setUserRepository(repository: UserRepository): void {
-    this.userRepository = repository;
-  }
-
-  /**
-   * Método para establecer un repositorio de transacciones de prueba (útil para tests)
-   */
-  static setTransactionRepository(repository: TransactionRepository): void {
-    this.transactionRepository = repository;
-  }
-
-  /**
-   * Método para establecer un repositorio de threads de prueba (útil para tests)
-   */
-  static setThreadRepository(repository: ThreadRepository): void {
-    this.threadRepository = repository;
-  }
-
-  readonly userRepository: UserRepository;
-  readonly threadRepository: ThreadRepository;
-
-  constructor() {
-    this.userRepository = RepositoryFactoryImpl.getUserRepository();
-    this.threadRepository = RepositoryFactoryImpl.getThreadRepository();
-  }
-
   async disconnect(): Promise<void> {
-    // Implementation of disconnect method
+    await this.prisma.$disconnect();
   }
 } 
