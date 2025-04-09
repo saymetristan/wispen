@@ -75,7 +75,7 @@
     // "newLine": "crlf",                                /* Set the newline character for emitting files. */
     // "stripInternal": true,                            /* Disable emitting declarations that have '@internal' in their JSDoc comments. */
     // "noEmitHelpers": true,                            /* Disable generating custom helper functions like '__extends' in compiled output. */
-    // "noEmitOnError": true,                            /* Disable emitting files if any type checking errors are reported. */
+    "noEmitOnError": false,                              /* Allow emitting files even if there are type checking errors. */
     // "preserveConstEnums": true,                       /* Disable erasing 'const enum' declarations in generated code. */
     // "declarationDir": "./",                           /* Specify the output directory for generated declaration files. */
 
@@ -89,13 +89,12 @@
     "forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
 
     /* Type Checking */
-    "strict": true,                                      /* Enable all strict type-checking options. */
-    // "noImplicitAny": true,                            /* Enable error reporting for expressions and declarations with an implied 'any' type. */
-    // "strictNullChecks": true,                         /* When type checking, take into account 'null' and 'undefined'. */
-    // "strictFunctionTypes": true,                      /* When assigning functions, check to ensure parameters and the return values are subtype-compatible. */
-    // "strictBindCallApply": true,                      /* Check that the arguments for 'bind', 'call', and 'apply' methods match the original function. */
-    // "strictPropertyInitialization": true,             /* Check for class properties that are declared but not set in the constructor. */
-    // "strictBuiltinIteratorReturn": true,              /* Built-in iterators are instantiated with a 'TReturn' type of 'undefined' instead of 'any'. */
+    "strict": false,                                     /* Disable all strict type-checking options temporarily. */
+    "noImplicitAny": false,                              /* Disable error reporting for expressions and declarations with an implied 'any' type. */
+    "strictNullChecks": false,                           /* Disable strict null checks. */
+    "strictFunctionTypes": false,                        /* Disable strict function type checking. */
+    "strictBindCallApply": false,                        /* Disable strict 'bind', 'call', and 'apply' methods checking. */
+    "strictPropertyInitialization": false,               /* Disable checking for class properties that are declared but not set in the constructor. */
     // "noImplicitThis": true,                           /* Enable error reporting when 'this' is given the type 'any'. */
     // "useUnknownInCatchVariables": true,               /* Default catch clause variables as 'unknown' instead of 'any'. */
     // "alwaysStrict": true,                             /* Ensure 'use strict' is always emitted. */

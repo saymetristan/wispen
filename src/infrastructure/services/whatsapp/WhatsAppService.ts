@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { logger } from '../../../utils/logger';
+import { logger } from '@utils/logger';
 import prisma from '../../database/prisma';
 import { OpenAIClient } from '../openai/OpenAIClient';
 import { OpenAIAssistantService } from '../openai/OpenAIAssistantService';
@@ -64,60 +64,47 @@ interface WhatsAppWebhookPayload {
 }
 
 /**
- * Servicio para interactuar con la API de WhatsApp Business
+ * Configuración para el servicio de WhatsApp
+ */
+export interface WhatsAppConfig {
+  apiUrl: string;
+  apiVersion: string;
+  phoneNumberId: string;
+  accessToken: string;
+  verifyToken?: string;
+  appSecret?: string;
+  businessAccountId?: string;
+}
+
+/**
+ * Servicio para interactuar con la API de WhatsApp
  */
 export class WhatsAppService {
-  private readonly apiUrl: string;
-  private readonly apiVersion: string;
-  private readonly phoneNumberId: string;
-  private readonly accessToken: string;
+  private apiUrl: string;
+  private phoneNumberId: string;
+  private accessToken: string;
 
-  constructor() {
-    this.apiUrl = process.env.WHATSAPP_API_URL || 'https://graph.facebook.com';
-    this.apiVersion = process.env.WHATSAPP_API_VERSION || 'v17.0';
-    this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
-    this.accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '';
-    
-    if (!this.phoneNumberId) {
-      logger.warn('WhatsApp API: No se ha configurado WHATSAPP_PHONE_NUMBER_ID');
-    }
-    
-    if (!this.accessToken) {
-      logger.warn('WhatsApp API: No se ha configurado WHATSAPP_ACCESS_TOKEN');
-    }
-    
-    if (this.phoneNumberId && this.accessToken) {
-      logger.info('WhatsApp API: Servicio inicializado correctamente');
-    }
+  constructor(config: WhatsAppConfig) {
+    this.apiUrl = `${config.apiUrl}/${config.apiVersion}/${config.phoneNumberId}`;
+    this.phoneNumberId = config.phoneNumberId;
+    this.accessToken = config.accessToken;
   }
 
   /**
-   * Envía un mensaje de texto a un número de WhatsApp
-   * @param to Número de teléfono de destino (formato internacional sin +)
+   * Envía un mensaje de texto simple
+   * @param to Número de teléfono del destinatario
    * @param text Texto del mensaje
-   * @returns Respuesta de la API de WhatsApp
    */
-  async sendTextMessage(to: string, text: string): Promise<WhatsAppMessageResponse> {
+  async sendText(to: string, text: string): Promise<boolean> {
     try {
-      // Asegurar que el número de teléfono tiene el formato correcto
-      const formattedTo = this.formatPhoneNumber(to);
-      
-      logger.info('Enviando mensaje de WhatsApp', { 
-        to: formattedTo,
-        textLength: text.length
-      });
-      
       const response = await axios.post(
-        `${this.apiUrl}/${this.apiVersion}/${this.phoneNumberId}/messages`,
+        `${this.apiUrl}/messages`,
         {
           messaging_product: 'whatsapp',
           recipient_type: 'individual',
-          to: formattedTo,
+          to,
           type: 'text',
-          text: {
-            preview_url: false,
-            body: text
-          }
+          text: { body: text }
         },
         {
           headers: {
@@ -126,21 +113,71 @@ export class WhatsAppService {
           }
         }
       );
-      
+
       logger.info('Mensaje enviado correctamente', {
-        to: formattedTo,
-        response: response.data
-      });
-      
-      return response.data;
-    } catch (error) {
-      logger.error('Error al enviar mensaje de WhatsApp', {
-        error: (error as Error).message,
         to,
-        textLength: text.length
+        messageId: response.data?.messages?.[0]?.id
       });
+
+      return true;
+    } catch (error) {
+      logger.error('Error al enviar mensaje', {
+        error: error instanceof Error ? error.message : String(error),
+        to
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Extrae el número de teléfono del remitente de un webhook
+   * @param webhookBody Cuerpo del webhook
+   */
+  extractSenderPhone(webhookBody: any): string | null {
+    try {
+      const entry = webhookBody.entry?.[0];
+      const changes = entry?.changes?.[0];
+      const value = changes?.value;
       
-      throw new Error('No se pudo enviar el mensaje de WhatsApp');
+      if (!value || !value.messages || value.messages.length === 0) {
+        return null;
+      }
+      
+      return value.messages[0].from;
+    } catch (error) {
+      logger.error('Error al extraer teléfono del remitente', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Extrae el texto del mensaje de un webhook
+   * @param webhookBody Cuerpo del webhook
+   */
+  extractMessageText(webhookBody: any): string | null {
+    try {
+      const entry = webhookBody.entry?.[0];
+      const changes = entry?.changes?.[0];
+      const value = changes?.value;
+      
+      if (!value || !value.messages || value.messages.length === 0) {
+        return null;
+      }
+      
+      const message = value.messages[0];
+      
+      if (message.type === 'text') {
+        return message.text.body;
+      }
+      
+      return null;
+    } catch (error) {
+      logger.error('Error al extraer texto del mensaje', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return null;
     }
   }
 

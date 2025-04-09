@@ -1,47 +1,57 @@
 import { PrismaClient } from '@prisma/client';
-import { User } from '../../core/domain/user/User';
-import { UserRepository } from '../../core/domain/repositories/UserRepository';
+import { User } from '@core/entities/User';
+import { UserRepository } from '@core/repositories/UserRepository';
 import { logger } from '../../utils/logger';
 
 /**
- * Implementación del repositorio de usuarios usando Prisma
+ * Implementación del repositorio de usuarios usando Prisma ORM
  */
 export class PrismaUserRepository implements UserRepository {
-  private prisma: PrismaClient;
+  constructor(private prisma: PrismaClient) {}
 
-  constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
+  async findByPhone(phone: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { phone }
+    });
+    return user as User | null;
   }
 
-  /**
-   * Busca un usuario por su ID
-   */
-  async getUserById(id: string): Promise<User | null> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id }
-      });
+  async findById(id: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id }
+    });
+    return user as User | null;
+  }
 
-      if (!user) {
-        return null;
-      }
-
-      return {
-        id: user.id,
+  async create(user: User): Promise<User> {
+    const createdUser = await this.prisma.user.create({
+      data: {
         phone: user.phone,
-        name: user.name || undefined,
-        email: user.email || undefined,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        metadata: user.metadata as any || {}
-      };
-    } catch (error) {
-      logger.error('Error al buscar usuario por ID', {
-        error: (error as Error).message,
-        userId: id
-      });
-      throw new Error(`No se pudo encontrar el usuario con ID ${id}`);
-    }
+        name: user.name,
+        email: user.email,
+        metadata: user.metadata as any
+      }
+    });
+    return createdUser as User;
+  }
+
+  async update(user: User): Promise<User> {
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name: user.name,
+        email: user.email,
+        metadata: user.metadata as any,
+        updatedAt: new Date()
+      }
+    });
+    return updatedUser as User;
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.user.delete({
+      where: { id }
+    });
   }
 
   /**
@@ -64,104 +74,13 @@ export class PrismaUserRepository implements UserRepository {
         return null;
       }
 
-      return {
-        id: user.id,
-        phone: user.phone,
-        name: user.name || undefined,
-        email: user.email || undefined,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        metadata: user.metadata as any || {}
-      };
+      return user as User;
     } catch (error) {
       logger.error('Error al buscar usuario por número de teléfono', {
         error: (error as Error).message,
         phoneNumber
       });
       throw new Error(`No se pudo encontrar el usuario con número de teléfono ${phoneNumber}`);
-    }
-  }
-
-  /**
-   * Crea un nuevo usuario
-   */
-  async createUser(user: User): Promise<User> {
-    try {
-      const createdUser = await this.prisma.user.create({
-        data: {
-          id: user.id,
-          phone: user.phone,
-          name: user.name || null,
-          email: user.email || null,
-          metadata: user.metadata || {}
-        }
-      });
-
-      return {
-        id: createdUser.id,
-        phone: createdUser.phone,
-        name: createdUser.name || undefined,
-        email: createdUser.email || undefined,
-        createdAt: createdUser.createdAt,
-        updatedAt: createdUser.updatedAt,
-        metadata: createdUser.metadata as any || {}
-      };
-    } catch (error) {
-      logger.error('Error al crear usuario', {
-        error: (error as Error).message,
-        user
-      });
-      throw new Error('No se pudo crear el usuario');
-    }
-  }
-
-  /**
-   * Actualiza un usuario existente
-   */
-  async updateUser(user: User): Promise<User> {
-    try {
-      const updatedUser = await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          phone: user.phone,
-          name: user.name || null,
-          email: user.email || null,
-          metadata: user.metadata || {}
-        }
-      });
-
-      return {
-        id: updatedUser.id,
-        phone: updatedUser.phone,
-        name: updatedUser.name || undefined,
-        email: updatedUser.email || undefined,
-        createdAt: updatedUser.createdAt,
-        updatedAt: updatedUser.updatedAt,
-        metadata: updatedUser.metadata as any || {}
-      };
-    } catch (error) {
-      logger.error('Error al actualizar usuario', {
-        error: (error as Error).message,
-        userId: user.id
-      });
-      throw new Error(`No se pudo actualizar el usuario con ID ${user.id}`);
-    }
-  }
-
-  /**
-   * Elimina un usuario por su ID
-   */
-  async deleteUser(id: string): Promise<void> {
-    try {
-      await this.prisma.user.delete({
-        where: { id }
-      });
-    } catch (error) {
-      logger.error('Error al eliminar usuario', {
-        error: (error as Error).message,
-        userId: id
-      });
-      throw new Error(`No se pudo eliminar el usuario con ID ${id}`);
     }
   }
 
@@ -187,13 +106,13 @@ export class PrismaUserRepository implements UserRepository {
    * Guarda un usuario (alias para create)
    */
   async save(user: User): Promise<User> {
-    return this.createUser(user);
+    return this.create(user);
   }
 
   async updateUserMetadata(userId: string, metadata: any): Promise<User> {
     try {
       // Obtenemos primero el usuario para conservar cualquier metadato existente
-      const existingUser = await this.getUserById(userId);
+      const existingUser = await this.findById(userId);
       
       if (!existingUser) {
         throw new Error(`No se encontró el usuario con ID ${userId}`);
@@ -206,22 +125,12 @@ export class PrismaUserRepository implements UserRepository {
       };
       
       // Actualizamos el usuario con los metadatos combinados
-      const updatedUser = await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          metadata: combinedMetadata
-        }
+      const updatedUser = await this.update({
+        ...existingUser,
+        metadata: combinedMetadata as any
       });
 
-      return {
-        id: updatedUser.id,
-        phone: updatedUser.phone,
-        name: updatedUser.name || undefined,
-        email: updatedUser.email || undefined,
-        createdAt: updatedUser.createdAt,
-        updatedAt: updatedUser.updatedAt,
-        metadata: updatedUser.metadata as any || {}
-      };
+      return updatedUser;
     } catch (error) {
       logger.error('Error al actualizar metadatos del usuario', {
         error: (error as Error).message,

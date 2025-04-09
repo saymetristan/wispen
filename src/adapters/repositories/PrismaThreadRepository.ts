@@ -43,27 +43,23 @@ export class PrismaThreadRepository implements ThreadRepository {
   /**
    * Busca un thread por el ID del usuario
    */
-  async findByUserId(userId: string): Promise<Thread | null> {
+  async findByUserId(userId: string): Promise<Thread[]> {
     try {
-      const thread = await this.prisma.thread.findFirst({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
+      const threads = await this.prisma.thread.findMany({
+        where: { userId }
       });
-
-      if (!thread) return null;
-
-      return new Thread(
+      return threads.map(thread => new Thread(
         thread.id,
         thread.userId,
         thread.threadId,
         thread.metadata as Record<string, any> || {}
-      );
+      ));
     } catch (error) {
-      logger.error('Error al buscar thread por ID de usuario', {
+      logger.error('Error al buscar threads por ID de usuario', {
         error: (error as Error).message,
         userId
       });
-      return null;
+      return [];
     }
   }
 
@@ -106,7 +102,7 @@ export class PrismaThreadRepository implements ThreadRepository {
           id: thread.id,
           userId: thread.userId,
           threadId: thread.threadId,
-          metadata: thread.metadata || {},
+          metadata: thread.metadata as any,
         }
       });
 
@@ -133,7 +129,8 @@ export class PrismaThreadRepository implements ThreadRepository {
       where: { id: thread.id },
       data: {
         threadId: thread.threadId,
-        metadata: thread.metadata,
+        metadata: thread.metadata as any,
+        updatedAt: new Date()
       }
     });
 
@@ -160,8 +157,8 @@ export class PrismaThreadRepository implements ThreadRepository {
   async findOrCreateByUserId(userId: string): Promise<Thread> {
     const existingThread = await this.findByUserId(userId);
     
-    if (existingThread) {
-      return existingThread;
+    if (existingThread.length > 0) {
+      return existingThread[0];
     }
     
     // Si no existe, crear un nuevo thread
@@ -182,25 +179,15 @@ export class PrismaThreadRepository implements ThreadRepository {
    * Encuentra el último thread de un usuario
    */
   async findLatestByUserId(userId: string): Promise<Thread | null> {
-    const thread = await this.prisma.thread.findFirst({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!thread) return null;
-
-    return new Thread(
-      thread.id,
-      thread.userId,
-      thread.threadId,
-      thread.metadata as Record<string, any> || {}
-    );
+    const threads = await this.findByUserId(userId);
+    if (threads.length === 0) return null;
+    return threads[threads.length - 1];
   }
 
   /**
    * Alias para findByUserId para compatibilidad
    */
-  async getThreadByUserId(userId: string): Promise<Thread | null> {
+  async getThreadByUserId(userId: string): Promise<Thread[]> {
     return this.findByUserId(userId);
   }
 

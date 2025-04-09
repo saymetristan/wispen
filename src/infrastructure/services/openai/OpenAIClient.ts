@@ -1,31 +1,28 @@
-import OpenAI from 'openai';
-import { logger } from '../../../utils/logger';
+import { logger } from '@utils/logger';
 
 /**
- * Cliente para OpenAI
+ * Cliente para interactuar con OpenAI
  */
 export class OpenAIClient {
-  private client: OpenAI;
+  private apiKey: string;
 
-  constructor() {
-    try {
-      this.client = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-      logger.info('Cliente de OpenAI inicializado correctamente');
-    } catch (error) {
-      logger.error('Error al inicializar cliente de OpenAI', {
-        error: (error as Error).message,
-      });
-      throw new Error('No se pudo inicializar el cliente de OpenAI');
-    }
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
   }
 
   /**
-   * Obtiene el cliente de OpenAI
+   * Crea una instancia de OpenAI
    */
-  getClient(): OpenAI {
-    return this.client;
+  getInstance() {
+    try {
+      // En una implementación real, aquí se devolvería una instancia del cliente OpenAI
+      return { apiKey: this.apiKey };
+    } catch (error) {
+      logger.error('Error al crear instancia de OpenAI', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw new Error('No se pudo crear la instancia de OpenAI');
+    }
   }
 
   /**

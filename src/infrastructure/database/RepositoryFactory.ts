@@ -1,16 +1,37 @@
-import { UserRepository } from '../../core/domain/repositories/UserRepository';
+import { UserRepository } from '@core/repositories/UserRepository';
 import { TransactionRepository } from '../../core/domain/repositories/TransactionRepository';
-import { ThreadRepository } from '../../core/domain/repositories/ThreadRepository';
+import { ThreadRepository } from '@core/repositories/ThreadRepository';
 import { PrismaUserRepository } from '../../adapters/repositories/PrismaUserRepository';
 import { PrismaTransactionRepository } from '../../adapters/repositories/PrismaTransactionRepository';
 import { PrismaThreadRepository } from '../../adapters/repositories/PrismaThreadRepository';
+
+/**
+ * Interfaz abstracta para la fábrica de repositorios
+ * Utiliza el patrón Abstract Factory para crear repositorios
+ */
+export interface RepositoryFactory {
+  /**
+   * Obtiene el repositorio de usuarios
+   */
+  readonly userRepository: UserRepository;
+  
+  /**
+   * Obtiene el repositorio de threads
+   */
+  readonly threadRepository: ThreadRepository;
+  
+  /**
+   * Cierra las conexiones a la base de datos
+   */
+  disconnect(): Promise<void>;
+}
 
 /**
  * Factory para crear instancias de repositorios
  * Implementa el principio de inversión de dependencias permitiendo
  * inyectar implementaciones concretas de los repositorios
  */
-export class RepositoryFactory {
+export class RepositoryFactoryImpl implements RepositoryFactory {
   private static userRepository: UserRepository | null = null;
   private static transactionRepository: TransactionRepository | null = null;
   private static threadRepository: ThreadRepository | null = null;
@@ -64,5 +85,17 @@ export class RepositoryFactory {
    */
   static setThreadRepository(repository: ThreadRepository): void {
     this.threadRepository = repository;
+  }
+
+  readonly userRepository: UserRepository;
+  readonly threadRepository: ThreadRepository;
+
+  constructor() {
+    this.userRepository = RepositoryFactoryImpl.getUserRepository();
+    this.threadRepository = RepositoryFactoryImpl.getThreadRepository();
+  }
+
+  async disconnect(): Promise<void> {
+    // Implementation of disconnect method
   }
 } 

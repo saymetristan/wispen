@@ -19,6 +19,8 @@ export class OpenAIAssistantService {
   private assistantId: string | null = null;
   private threadRepository: ThreadRepository;
   private toolHandler: OpenAIToolHandler;
+  private openAIClient: OpenAIClient;
+  private prisma: PrismaClient;
 
   constructor(
     openAIClient: OpenAIClient,
@@ -36,6 +38,9 @@ export class OpenAIAssistantService {
     
     // Inicializar el manejador de herramientas
     this.toolHandler = new OpenAIToolHandler();
+
+    this.openAIClient = openAIClient;
+    this.prisma = prismaClient;
   }
 
   /**
