@@ -1,5 +1,5 @@
 import { TransactionRepository } from '../../domain/repositories/TransactionRepository';
-import { RepositoryFactory } from '@infrastructure/database/RepositoryFactory';
+import { RepositoryFactory } from '@core/domain/factories/RepositoryFactory';
 import { Transaction, TransactionType as DomainTransactionType } from '../../domain/Transaction';
 import { v4 as uuidv4 } from 'uuid';
 import { TransactionCategoryService } from '../../domain/services/TransactionCategoryService';
@@ -21,8 +21,8 @@ interface RegisterTransactionRequest {
 export class RegisterTransactionUseCase {
   private transactionRepository: TransactionRepository;
 
-  constructor() {
-    this.transactionRepository = RepositoryFactory.getTransactionRepository();
+  constructor(repositoryFactory: RepositoryFactory) {
+    this.transactionRepository = repositoryFactory.createTransactionRepository();
   }
 
   /**

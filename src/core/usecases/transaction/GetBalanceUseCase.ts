@@ -1,5 +1,5 @@
 import { TransactionRepository } from '../../domain/repositories/TransactionRepository';
-import { RepositoryFactory } from '@infrastructure/database/RepositoryFactory';
+import { RepositoryFactory } from '@core/domain/factories/RepositoryFactory';
 import { TransactionType } from '../../domain/Transaction';
 import { logger } from '@utils/logger';
 import { ToolResponse } from '@infrastructure/services/openai/tools/AssistantTools';
@@ -17,8 +17,8 @@ interface GetBalanceRequest {
 export class GetBalanceUseCase {
   private transactionRepository: TransactionRepository;
 
-  constructor() {
-    this.transactionRepository = RepositoryFactory.getTransactionRepository();
+  constructor(repositoryFactory: RepositoryFactory) {
+    this.transactionRepository = repositoryFactory.createTransactionRepository();
   }
 
   /**

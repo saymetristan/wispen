@@ -178,7 +178,7 @@ export class ProcessWhatsAppMessage {
         
         const newThread = new Thread(
           uuidv4(),
-          user.threadId,
+          user.id,
           threadId,
           { created_by: 'process_whatsapp_message' }
         );

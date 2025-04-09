@@ -93,8 +93,8 @@ export class PrismaUserRepository implements UserRepository {
         id: user.id,
         phone: user.phone,
         name: user.name,
-        metadata: user.metadata as any
-      }
+        metadata: user.metadata as any || {}
+      } as any
     });
     return createdUser as User;
   }
@@ -107,9 +107,9 @@ export class PrismaUserRepository implements UserRepository {
       where: { id: user.id },
       data: {
         name: user.name,
-        metadata: user.metadata as any,
+        metadata: user.metadata as any || {},
         updatedAt: new Date()
-      }
+      } as any
     });
     return updatedUser as User;
   }

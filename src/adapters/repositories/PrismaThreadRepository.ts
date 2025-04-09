@@ -19,7 +19,7 @@ export class PrismaThreadRepository implements ThreadRepository {
    */
   async findById(id: string): Promise<Thread | null> {
     try {
-      const thread = await this.prisma.thread.findUnique({
+      const thread = await (this.prisma as any).thread.findUnique({
         where: { id }
       });
 
@@ -45,7 +45,7 @@ export class PrismaThreadRepository implements ThreadRepository {
    */
   async findByUserId(userId: string): Promise<Thread | null> {
     try {
-      const threads = await this.prisma.thread.findMany({
+      const threads = await (this.prisma as any).thread.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
         take: 1
@@ -81,7 +81,7 @@ export class PrismaThreadRepository implements ThreadRepository {
    */
   async save(data: any): Promise<Thread> {
     try {
-      const thread = await this.prisma.thread.create({
+      const thread = await (this.prisma as any).thread.create({
         data: {
           id: data.id || uuidv4(),
           userId: data.userId,
@@ -117,7 +117,7 @@ export class PrismaThreadRepository implements ThreadRepository {
    */
   async createThread(thread: Thread): Promise<Thread> {
     try {
-      const createdThread = await this.prisma.thread.create({
+      const createdThread = await (this.prisma as any).thread.create({
         data: {
           id: thread.id,
           userId: thread.userId,
@@ -145,7 +145,7 @@ export class PrismaThreadRepository implements ThreadRepository {
    * Actualiza un thread existente
    */
   async update(thread: Thread): Promise<Thread> {
-    const updatedThread = await this.prisma.thread.update({
+    const updatedThread = await (this.prisma as any).thread.update({
       where: { id: thread.id },
       data: {
         threadId: thread.threadId,
@@ -166,7 +166,7 @@ export class PrismaThreadRepository implements ThreadRepository {
    * Elimina un thread por su ID
    */
   async delete(id: string): Promise<void> {
-    await this.prisma.thread.delete({
+    await (this.prisma as any).thread.delete({
       where: { id },
     });
   }

@@ -1,5 +1,6 @@
 import { UserRepository } from '../repositories/UserRepository';
 import { ThreadRepository } from '../repositories/ThreadRepository';
+import { TransactionRepository } from '../repositories/TransactionRepository';
 
 /**
  * Fábrica de repositorios que implementa el patrón Abstract Factory
@@ -15,4 +16,9 @@ export interface RepositoryFactory {
    * Crea un repositorio de threads
    */
   createThreadRepository(): ThreadRepository;
+  
+  /**
+   * Crea un repositorio de transacciones
+   */
+  createTransactionRepository(): TransactionRepository;
 } 
